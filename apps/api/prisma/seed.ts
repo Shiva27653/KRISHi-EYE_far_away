@@ -155,14 +155,19 @@ async function main() {
     console.log('✅ Support contacts seeded.')
     
     // 7. RAG Ingestion
-    console.log('🤖 Seeding RAG Datasets (Grounding Agri AI)...')
-    const ragService = new RagService(prisma as any)
-    try {
-        await ragService.ingestCsv('./datasets/kcc.csv', 'cotton')
-        await ragService.ingestCsv('./datasets/sarthi.csv', 'rice')
-        console.log('✅ RAG Datasets ingested successfully.')
-    } catch (err) {
-        console.error('⚠️ RAG Ingestion failed:', err)
+    const fs = require('fs');
+    if (fs.existsSync('./datasets/kcc.csv')) {
+        console.log('🤖 Seeding RAG Datasets (Grounding Agri AI)...')
+        const ragService = new RagService(prisma as any)
+        try {
+            await ragService.ingestCsv('./datasets/kcc.csv', 'cotton')
+            await ragService.ingestCsv('./datasets/sarthi.csv', 'rice')
+            console.log('✅ RAG Datasets ingested.')
+        } catch (err) {
+            console.error('⚠️ RAG Ingestion failed:', err)
+        }
+    } else {
+        console.warn('⚠️ Datasets not found at ./datasets/. Skipping RAG seed.')
     }
 
     console.log('✨ Seeding finished successfully.')

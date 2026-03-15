@@ -69,4 +69,8 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0');
   console.log(`🚀 API is running on: http://0.0.0.0:${port}/api/docs`);
 }
-bootstrap();
+bootstrap().catch(err => {
+  console.error('CRITICAL: Application failed to bootstrap!');
+  console.error(err);
+  process.exit(1);
+});
