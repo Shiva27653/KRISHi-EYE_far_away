@@ -30,6 +30,11 @@ export class RagService implements OnModuleInit {
     this.isInitializing = true;
     
     try {
+      if (process.env.NODE_ENV === 'production') {
+        this.logger.log('⏭️ RAG local embedder disabled in production (using local Ollama strategy)');
+        return;
+      }
+
       this.logger.log('🏗️ Loading RAG dependencies and models...');
       
       // Dynamic imports for ESM compatibility

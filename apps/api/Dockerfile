@@ -1,22 +1,14 @@
-# Production Dockerfile for NestJS API — Debian Slim with Native Binary Optimization
+# Production Dockerfile — Debian Slim (glibc support for ONNX/Sharp)
 FROM node:20-slim
 
-WORKDIR /app
-
-# System deps:
-# - openssl/libssl: Required by Prisma
-# - ca-certificates: Required for secure downloads
-# - python3/make/g++: Required for native module compilation
-# - libvips-dev: Specifically for sharp support
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     openssl \
-    libssl-dev \
+    libc6-dev \
     ca-certificates \
-    python3 \
-    make \
-    g++ \
-    libvips-dev \
     && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
 
 # Enable pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
@@ -27,9 +19,11 @@ COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
 COPY packages/types/package.json ./packages/types/
 
-# Install deps with SHAMEFULLY-HOIST (crucial for finding native binaries in deep trees)
-# Also ensuring we don't ignore scripts to allow sharp binary downloads
+# Install dependencies (shamefully-hoist for better binary resolution)
 RUN pnpm install --frozen-lockfile --shamefully-hoist
+
+# Explicitly rebuild sharp for linux-x64
+RUN npm rebuild sharp --platform=linux --arch=x64
 
 # Build shared types
 COPY packages ./packages
@@ -39,13 +33,11 @@ RUN pnpm run build
 # Build API
 WORKDIR /app/apps/api  
 COPY apps/api ./  
-RUN DATABASE_URL="postgresql://postgres:password@localhost:5432/db" npx prisma generate
+# Dummy DB URL for generation
+RUN DATABASE_URL="file:./dev.db" npx prisma generate
 RUN pnpm run build
 
-# Force rebuild of native modules to ensure they match the container environment
-RUN pnpm rebuild sharp onnxruntime-node
-
-EXPOSE 3000
+EXPOSE 10000
 
 ENV NODE_ENV=production
 
