@@ -1,80 +1,105 @@
-# KRISHI-EYE 🌾 Precision Agriculture Platform
+# KRISHI-EYE 🌾 | Precision Agriculture Platform
 
-Mobile-first precision agriculture platform for Indian farmers, with a companion web dashboard for monitoring, demonstrations, and review. KRISHI-EYE integrates computer vision–driven disease detection with a boom-sprayer system to enable targeted, efficient crop treatment.
+[![Security: HttpOnly Cookies](https://img.shields.io/badge/Security-HttpOnly%20Cookies-green.svg)](#)
+[![Stack: Monorepo](https://img.shields.io/badge/Stack-Monorepo-blue.svg)](#)
+[![AI: RAG Powered](https://img.shields.io/badge/AI-RAG%20Powered-orange.svg)](#)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## 🎯 Primary Interfaces
+**KRISHI-EYE** is a production-grade precision agriculture platform designed for Indian farmers. It integrates real-time tractor telemetry, computer-vision disease detection, and LLM-powered agronomic advisory to transition farming from "blanket treatment" to "precision intervention."
 
-| Interface | Purpose | Technology |
-|-----------|---------|------------|
-| **Mobile App** | Farmer-facing field tool — capture, detect, advise | Expo 55 (React Native 0.83) |
-| **Web Dashboard** | Monitoring, demo, and review interface | Next.js 16 (React 19, App Router) |
+---
 
-Both clients share a common backend API and AI service.
+## 🚀 Live Demo & Dashboard
 
-## 🔬 Computer Vision Pipeline
+> [!TIP]
+> **Live Web Dashboard:** [dashboard.krishieye.app](https://krishieye.app)
+> **API Docs:** [api.krishieye.app/api/docs](https://api.krishieye.app/api/docs)
 
-KRISHI-EYE uses a multi-stage vision pipeline for disease detection and targeted spraying:
+![Hero Screenshot](https://raw.githubusercontent.com/soham25-git/KRISHI-EYE_Webapp-India-Innovates_Open-Innovation/main/docs/screenshots/dashboard_hero.png)
 
-1. **Leaf Segmentation** — YOLOv8n-seg isolates individual leaves from field imagery
-2. **Infection Classification** — MobileNetV2 classifies detected leaves by disease type
-3. **Lesion Area Segmentation** — U-Net segments the precise lesion boundaries within infected leaves
-4. **Targeted Spraying** — Detection results drive a 6-lane boom-sprayer heatmap for precision application
+---
+
+## 🏗️ System Architecture
+
+KRISHI-EYE utilizes a modern monorepo architecture for seamless synchronization across mobile, web, and AI services.
+
+```mermaid
+graph TD
+  User((Farmer / Judge)) --> WebApp[Next.js Web - apps/web]
+  User --> MobileApp[Expo Mobile - apps/mobile]
+  WebApp --> API[NestJS Backend - apps/api]
+  MobileApp --> API
+  API --> DB[(PostgreSQL + PostGIS)]
+  API --> AIService[FastAPI RAG AI - apps/ai-service]
+  AIService --> LLM[External LLM]
+  Tractor[Tractor Hardware] --> API[Telemetry Ingestion]
+```
+
+---
 
 ## 🚜 Core Capabilities
 
-- **Disease Detection** — Multi-stage CV pipeline (segment → classify → localize)
-- **Precision Spraying** — Heatmap-based 6-lane boom simulation for targeted treatment
-- **Agri Advisory** — RAG-powered recommendations with ICAR/KVK source citations
-- **Help Directory** — Verified Indian agricultural support contacts (KVKs, ICAR centres, helplines)
-- **Offline-Ready** — PWA and local-first mobile architecture
+### 1. Live Fleet Telemetry
+- **Real-time Tracking**: Monitor tractor movement with sub-second latency via Socket.io.
+- **Boustrophedon Generation**: Intelligent simulator generates realistic lane-by-lane patterns for demo environments.
+- **Heatmap Visualization**: Dynamic infection heatmaps that update in real-time based on CV detections.
 
-## 🏗️ Architecture
+### 2. RAG Agronomic Advisory
+- **Grounded Advice**: AI recommendations are grounded in verified ICAR/KVK knowledge bases using Retrieval-Augmented Generation (RAG).
+- **Primary Source Citations**: Every piece of advice includes direct links to supporting research or government circulars.
+- **Trust UI**: A dedicated interface to verify the LLM's sources and reasoning.
 
-```mermaid
-graph TB
-    Farmer[Farmer in Field] --> Mobile[Mobile App<br/>Expo 55]
-    Judge[Reviewer / Judge] --> Web[Web Dashboard<br/>Next.js 16]
-    Mobile --> API[NestJS API]
-    Web --> API
-    API --> AI[FastAPI RAG Service]
-    AI --> CV[CV Pipeline<br/>YOLOv8n-seg + MobileNetV2 + U-Net]
-    AI --> VectorDB[PGVector<br/>Knowledge Base]
-```
+### 3. Edge Computer Vision
+- **Multi-Stage Pipeline**: YOLOv8n Leaf Segmentation → MobileNetV2 Classification → U-Net Lesion Mapping.
+- **Targeted Spraying**: Detection data drives a 6-lane boom-sprayer control system for optimal chemical use.
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed flow diagrams.
-
-## 📁 Repository Structure
-
-```
-apps/
-├── mobile/       # Expo React Native — farmer-facing mobile app
-├── web/          # Next.js — web dashboard and demo interface
-├── api/          # NestJS — backend API
-└── ai-service/   # FastAPI — RAG advisory + CV inference
-packages/
-└── types/        # Shared TypeScript types
-```
-
-## 🚀 Quick Start
-
-```bash
-git clone https://github.com/soham25-git/KRISHI-EYE_Webapp-India-Innovates_Open-Innovation.git
-cd KRISHI-EYE_Webapp-India-Innovates_Open-Innovation
-
-# Backend API
-cd apps/api && npm install && npm run start:dev
-
-# Web Dashboard
-cd apps/web && npm install && npm run dev
-
-# Mobile App
-cd apps/mobile && npm install && npx expo start
-```
+---
 
 ## 🛠️ Tech Stack
 
-See [TECH-STACK.md](TECH-STACK.md)
+### Frontend & Mobile
+- **Web**: Next.js 16 (App Router), React 19, Tailwind CSS, shadcn/ui.
+- **Mobile**: Expo 55, React Native, React Navigation.
 
-## 📄 License
+### Backend & AI
+- **API**: NestJS 11, Prisma ORM, PostgreSQL (PostGIS + pgvector).
+- **AI Service**: FastAPI, ONNX Runtime, OpenCV, PyTorch.
 
-MIT © Soham Rangnekar
+---
+
+## 🏃 Quick Start
+
+### 1. Clone & Install
+```bash
+git clone https://github.com/soham25-git/KRISHI-EYE_Webapp-India-Innovates_Open-Innovation.git
+cd KRISHI-EYE_Webapp-India-Innovates_Open-Innovation
+npm install
+```
+
+### 2. Environment Setup
+Copy `.env.example` to `.env` in `apps/api` and `apps/web`.
+
+### 3. Start Development
+```bash
+# Run everything simultaneously
+npm run dev
+```
+
+---
+
+## 📄 Documentation
+- [Architecture Details](ARCHITECTURE.md)
+- [Deployment Guide](docs/DEPLOYMENT.md)
+- [API Reference](apps/api/README.md)
+
+---
+
+## 🛡️ Security
+KRISHI-EYE implements production-grade security including:
+- **HttpOnly Cookies**: JWTs are stored in secure, HttpOnly, SameSite cookies to mitigate XSS risks.
+- **OTP Auth**: Passwordless authentication for rural accessibility.
+- **Rate Limiting**: Throttling on all auth and telemetry ingestion endpoints.
+
+---
+
+MIT © [Soham Rangnekar](https://github.com/soham25-git)

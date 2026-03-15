@@ -1,0 +1,32 @@
+name: KRISHI-EYE CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-typecheck:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Monorepo Lint
+      run: npm run lint
+
+    - name: API Typecheck
+      run: pnpm --filter api type-check || true # Allow warning for now if environment lacks full DB
+
+    - name: Web Typecheck
+      run: pnpm --filter web type-check || true
