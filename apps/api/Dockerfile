@@ -9,9 +9,11 @@ RUN apk add --no-cache openssl
 # Enable pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Copy monorepo config + workspace packages
+# Copy monorepo config + ALL workspace package metadata
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
+COPY packages/types/package.json ./packages/types/
 COPY packages/ ./packages/
 
 # Install ALL workspace deps first (fixes tsc: not found)
