@@ -116,6 +116,7 @@ model Field {
 
   farm               Farm      @relation(fields: [farmId], references: [id])
   jobs               OperationJob[]
+  supportTickets     SupportTicket[]
 
   @@index([boundary], type: Gist)
   @@map("fields")
@@ -133,6 +134,7 @@ model Tractor {
   farm               Farm      @relation(fields: [farmId], references: [id])
   jobs               OperationJob[]
   telemetryPoints    TelemetryPoint[]
+  supportTickets     SupportTicket[]
 
   @@map("tractors")
 }
