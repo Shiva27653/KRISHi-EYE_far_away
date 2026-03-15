@@ -13,6 +13,17 @@ export async function apiRequest<T>(
     const headers = new Headers(options.headers);
     headers.set('Content-Type', 'application/json');
 
+    // S-01: Explicitly remove legacy localStorage tokens if found to prevent confusion
+    if (typeof window !== 'undefined') {
+        const legacyToken = localStorage.getItem('token') || localStorage.getItem('jwt') || localStorage.getItem('access_token');
+        if (legacyToken) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('jwt');
+            localStorage.removeItem('access_token');
+            console.log('Purged legacy localStorage authentication tokens.');
+        }
+    }
+
     const response = await fetch(`${BASE_URL}${normalizedEndpoint}`, {
         ...options,
         headers,

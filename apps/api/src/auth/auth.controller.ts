@@ -60,16 +60,22 @@ export class AuthController {
       const cookieOptions = {
         httpOnly: true,
         secure: isProd,
-        // S-01: sameSite 'none' + secure is mandatory for cross-site cookies (Render/Mobile)
-        // If sameSite 'lax', mobile browsers may block cookies in some WebView/redirect contexts.
-        sameSite: isProd ? ('none' as const) : ('lax' as const),
+        // S-01: sameSite 'strict' as per production security specification
+        sameSite: 'strict' as const,
         path: '/'
       };
 
       res.cookie('krishi_auth_token', tokens.access_token, { ...cookieOptions, maxAge: 15 * 60 * 1000 }); // 15m
       res.cookie('krishi_refresh_token', tokens.refresh_token, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 }); // 7d
 
-      return tokens;
+      return {
+        user: {
+            id: tokens.user?.id,
+            phone: tokens.user?.phone,
+            role: tokens.user?.role
+        },
+        message: 'Login successful'
+      };
     } catch (e: any) {
       if (e instanceof UnauthorizedException) {
         throw e;

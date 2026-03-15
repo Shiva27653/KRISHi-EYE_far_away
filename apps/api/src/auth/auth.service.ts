@@ -110,7 +110,14 @@ export class AuthService {
     // We don't delete immediately to allow for Lagoon/Mobile duplicate hits
     // Cleanup happens in requestOtp or after 10s if we wanted a timer, but requestOtp is sufficient.
 
-    return tokens;
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        phone: user.phone,
+        role: user.role
+      }
+    };
   }
 
   async refreshToken(refreshToken: string, ip: string, userAgent: string) {

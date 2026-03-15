@@ -26,12 +26,12 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     private extractTokenFromHeader(request: any): string | undefined {
-        // First check cookies since we migrated to HTTP-Only
+        // Priority 1: Cookies (Post-Migration Secure Storage)
         if (request.cookies && request.cookies['krishi_auth_token']) {
             return request.cookies['krishi_auth_token'];
         }
         
-        // Fallback for native mobile app compatibility
+        // Priority 2: Header (Compatibility for CI/API/Legacy Mobile)
         const authHeader = request.headers.authorization;
         if (!authHeader) return undefined;
         const [type, token] = authHeader.split(' ');
