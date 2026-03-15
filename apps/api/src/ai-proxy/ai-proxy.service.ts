@@ -1,7 +1,9 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { SupportService } from '../support/support.service';
+import { PrismaService } from '../database/prisma.service';
+import { Prisma } from '@prisma/client';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const FormData = require('form-data');
 
@@ -11,12 +13,15 @@ export class AiProxyService {
 
   constructor(
     private readonly httpService: HttpService,
+    private readonly prisma: PrismaService,
     @Inject(forwardRef(() => SupportService))
     private supportService: SupportService,
   ) { }
 
   async askQuestion(dto: any, userId: string): Promise<any> {
     const question = dto.question;
+    let aiData: any;
+    let usedFallback = false;
 
     try {
       // 1. Call the Python Deep RAG Service
@@ -34,56 +39,102 @@ export class AiProxyService {
           }
         })
       );
-
-      const aiData = response.data;
-      return {
-        id: aiData.answer_id || Date.now().toString(),
-        response: aiData.answer || aiData.response,
-        createdAt: new Date().toISOString(),
-        confidence: aiData.confidence > 0.8 ? 'High (Grounded)' : 'Moderate',
-        sources: (aiData.sources || []).map((s: any) => ({
-          id: s.source_id || s.id,
-          title: s.title,
-          url: s.url || '#'
-        }))
-      };
-
+      aiData = response.data;
     } catch (error: any) {
       console.warn('AI Service unreachable, falling back to local grounded knowledge', error.message);
-      
-      // 2. Fallback to Local Grounded logic if Python service is down
+      usedFallback = true;
       const relevantSources = await this.supportService.getKnowledge(question);
-
-      return {
-        id: Date.now().toString(),
-        response: relevantSources.length > 0 
+      
+      aiData = {
+        answer_id: `fallback-${Date.now()}`,
+        answer: relevantSources.length > 0 
           ? `[LOCAL BACKUP] Based on ICAR/KVK protocols: ${relevantSources[0].content.substring(0, 500)}`
           : `I am currently in simplified mode. For "${question}", please consult your district KVK or the Kisan Call Centre at 1800-180-1551.`,
-        createdAt: new Date().toISOString(),
-        confidence: relevantSources.length > 0 ? 'High (Grounded)' : 'Moderate (General)',
-        sources: relevantSources.map((s: any) => ({ 
-          id: s.id, 
+        confidence: relevantSources.length > 0 ? 0.9 : 0.5,
+        sources: relevantSources.map((s: any) => ({
+          source_id: s.id,
           title: s.title,
-          url: (s as any).sourceUrl || '#' 
+          url: (s as any).sourceUrl || '#'
         }))
       };
     }
+
+    // 2. Persist to Database for History
+    const log = await this.prisma.advisoryLog.create({
+      data: {
+        userId: userId,
+        farmId: dto.farmId || null,
+        question: question,
+        answer: aiData.answer || aiData.response,
+        language: dto.language || 'en',
+        confidence: new Prisma.Decimal(aiData.confidence || 0),
+        sourceIds: (aiData.sources || []).map((s: any) => s.source_id || s.id),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days retention
+      }
+    });
+
+    return {
+      id: log.id,
+      response: log.answer,
+      createdAt: log.createdAt,
+      confidence: (log.confidence?.toNumber() || 0) > 0.8 ? 'High (Grounded)' : 'Moderate',
+      sources: (aiData.sources || []).map((s: any) => ({
+        id: s.source_id || s.id,
+        title: s.title,
+        url: s.url || '#'
+      }))
+    };
   }
   
   async submitFeedback(logId: string, rating: string, userId: string): Promise<any> { 
+    const log = await this.prisma.advisoryLog.findUnique({ where: { id: logId } });
+    if (!log || log.userId !== userId) throw new NotFoundException('Log not found or access denied');
+
+    await this.prisma.advisoryLog.update({
+      where: { id: logId },
+      data: { rating } as any
+    });
+
     return { success: true }; 
   }
   
   async escalate(logId: string, userId: string): Promise<any> { 
+    const log = await this.prisma.advisoryLog.findUnique({ where: { id: logId } });
+    if (!log || log.userId !== userId) throw new NotFoundException('Log not found or access denied');
+
+    await this.prisma.advisoryLog.update({
+      where: { id: logId },
+      data: { escalated: true }
+    });
+
     return { success: true }; 
   }
   
   async getHistory(userId: string): Promise<any[]> { 
-    return []; // Return empty array to safely render 'Type your first question'
+    const logs = await this.prisma.advisoryLog.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 50
+    });
+
+    return logs.map(log => ({
+      id: log.id,
+      prompt: log.question,
+      response: log.answer,
+      confidence: (log.confidence?.toNumber() || 0) > 0.8 ? 'High' : 'Moderate',
+      createdAt: log.createdAt,
+      sources: [] // We could populate titles here if needed by fetching sources from knowledge base
+    }));
   }
   
   async getSource(sourceId: string): Promise<any> { 
-    return { id: sourceId, title: 'Demo Document' }; 
+    const source = await this.prisma.knowledgeSource.findUnique({ where: { id: sourceId } });
+    if (!source) return { id: sourceId, title: 'Source Document' };
+    return {
+      id: source.id,
+      title: source.title,
+      url: source.sourceUrl
+    };
   }
 
   async analyzeImage(file: any, userId: string): Promise<any> {
@@ -112,13 +163,9 @@ export class AiProxyService {
       return response.data;
     } catch (error: any) {
       if (error.response) {
-        // AI service returned a specific error (e.g., 503, 413, 500)
         const status = error.response.status;
         const detail = error.response.data?.detail || error.message;
-        throw new (require('@nestjs/common').HttpException)(
-          detail,
-          status
-        );
+        throw new (require('@nestjs/common').HttpException)(detail, status);
       }
       
       console.error('Vision analysis proxy connectivity error:', error.message);

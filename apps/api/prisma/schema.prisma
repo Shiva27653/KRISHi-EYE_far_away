@@ -154,6 +154,7 @@ model OperationJob {
   tractor            Tractor   @relation(fields: [tractorId], references: [id])
   field              Field     @relation(fields: [fieldId], references: [id])
   telemetryPoints    TelemetryPoint[]
+  supportTickets     SupportTicket[]
 
   @@map("operation_jobs")
 }
@@ -232,10 +233,16 @@ model SupportTicket {
   id                 String    @id @default(uuid())
   userId             String    @map("user_id")
   farmId             String?   @map("farm_id")
-  category           String?
-  description        String?
-  status             String
-  priority           String?
+  title              String?
+  category           String
+  priority           String    @default("medium")
+  status             String    @default("open")
+  description        String
+  fieldId            String?   @map("field_id")
+  tractorId          String?   @map("tractor_id")
+  jobId              String?   @map("job_id")
+  resolutionSummary  String?   @map("resolution_summary")
+  metadata           Json?
   assignedToUserId   String?   @map("assigned_to_user_id")
   createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt          DateTime  @updatedAt @map("updated_at")
@@ -243,6 +250,9 @@ model SupportTicket {
   creator            User      @relation("TicketCreator", fields: [userId], references: [id])
   assignee           User?     @relation("TicketAssignee", fields: [assignedToUserId], references: [id])
   farm               Farm?     @relation(fields: [farmId], references: [id])
+  field              Field?    @relation(fields: [fieldId], references: [id])
+  tractor            Tractor?  @relation(fields: [tractorId], references: [id])
+  job                OperationJob? @relation(fields: [jobId], references: [id])
 
   @@map("support_tickets")
 }
@@ -289,6 +299,8 @@ model AdvisoryLog {
   language           String?
   confidence         Decimal?  @db.Decimal(5,4)
   sourceIds          String[]  @map("source_ids")
+  rating             String?
+  feedback           String?
   escalated          Boolean   @default(false)
   expiresAt          DateTime  @map("expires_at")
   createdAt          DateTime  @default(now()) @map("created_at")

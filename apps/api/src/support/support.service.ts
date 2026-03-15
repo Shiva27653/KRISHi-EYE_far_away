@@ -52,17 +52,19 @@ export class SupportService {
       }
     }
 
-    return this.prisma.supportTicket.create({
+    return (this.prisma.supportTicket.create as any)({
       data: {
         userId: userId,
         farmId: dto.farmId,
+        fieldId: dto.fieldId,
+        tractorId: dto.tractorId,
+        jobId: dto.jobId,
+        title: dto.title,
         category: dto.category,
         priority: dto.priority || 'medium',
         description: dto.description,
-        status: 'open'
-        // Note: Missing fields in Prisma schema for SupportTicket: fieldId, tractorId, jobId, title, metadata
-        // Audit suggested these are in the DTO but not strictly in the Prisma model S-01.
-        // We stick to what Prisma allows.
+        status: 'open',
+        metadata: dto.metadata || undefined
       }
     });
   }
@@ -71,21 +73,32 @@ export class SupportService {
     const memberships = await this.prisma.farmMember.findMany({ where: { userId: userId } });
     const farmIds = memberships.map(m => m.farmId);
 
-    return this.prisma.supportTicket.findMany({
+    return (this.prisma.supportTicket.findMany as any)({
       where: {
         OR: [
           { userId: userId },
           { farmId: { in: farmIds } }
         ]
       },
+      include: {
+        field: true,
+        tractor: true,
+        job: true
+      },
       orderBy: { createdAt: 'desc' }
     });
   }
 
   async findOneTicket(id: string) {
-    const ticket = await this.prisma.supportTicket.findUnique({
+    const ticket = await (this.prisma.supportTicket.findUnique as any)({
       where: { id },
-      include: { creator: true, farm: true }
+      include: { 
+        creator: true, 
+        farm: true,
+        field: true,
+        tractor: true,
+        job: true
+      }
     });
     if (!ticket) throw new NotFoundException('Ticket not found');
     return ticket;
@@ -98,17 +111,14 @@ export class SupportService {
       if ((ticket.status === 'closed' || ticket.status === 'cancelled') && dto.status !== ticket.status) {
         throw new BadRequestException(`Cannot update status of a ${ticket.status} ticket`);
       }
-
-      // No resolvedAt/closedAt in current Prisma schema for SupportTicket
-      // We will only update status and priority/resolution if they exist.
     }
 
-    return this.prisma.supportTicket.update({
+    return (this.prisma.supportTicket.update as any)({
       where: { id },
       data: {
         status: dto.status || undefined,
         priority: dto.priority || undefined,
-        // resolutionSummary not in schema
+        resolutionSummary: dto.resolutionSummary || undefined
       }
     });
   }
@@ -119,11 +129,14 @@ export class SupportService {
       throw new BadRequestException('Can only escalate active tickets');
     }
 
-    return this.prisma.supportTicket.update({
+    return (this.prisma.supportTicket.update as any)({
       where: { id },
       data: {
         priority: 'high',
-        // metadata not in schema
+        metadata: {
+          ...(ticket.metadata as any || {}),
+          escalatedAt: new Date().toISOString()
+        }
       }
     });
   }

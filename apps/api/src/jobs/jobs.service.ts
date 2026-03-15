@@ -84,12 +84,50 @@ export class JobsService {
   }
 
   async getReplayData(id: string) {
-    // Stub for now, would fetch from telemetry points
-    return { jobId: id, points: [] };
+    const points: any[] = await this.prisma.$queryRaw`
+      SELECT 
+        recorded_at as "recordedAt",
+        ST_X(location::geometry) as lng,
+        ST_Y(location::geometry) as lat,
+        speed_kmph as "speedKmph",
+        heading_deg as "headingDeg",
+        infection_intensity as "infectionIntensity",
+        progress_percent as "progressPercent"
+      FROM telemetry_points
+      WHERE job_id = ${id}
+      ORDER BY recorded_at ASC
+    `;
+    
+    return {
+      jobId: id,
+      points: points.map(p => ({
+        ...p,
+        lat: Number(p.lat),
+        lng: Number(p.lng)
+      }))
+    };
   }
 
   async getHeatmapData(id: string) {
-    // Stub for now
-    return { jobId: id, heatmap: [] };
+    const points: any[] = await this.prisma.$queryRaw`
+      SELECT 
+        ST_X(location::geometry) as lng,
+        ST_Y(location::geometry) as lat,
+        heat_weight as weight,
+        infection_intensity as intensity
+      FROM telemetry_points
+      WHERE job_id = ${id}
+    `;
+
+    return {
+      jobId: id,
+      heatmap: points.map(p => ({
+        ...p,
+        lat: Number(p.lat),
+        lng: Number(p.lng),
+        weight: Number(p.weight),
+        intensity: Number(p.intensity)
+      }))
+    };
   }
 }
