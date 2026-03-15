@@ -9,26 +9,26 @@ RUN apk add --no-cache openssl
 # Enable pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Copy monorepo config + ALL workspace package metadata
+# Minimal package.json context (satisfies pnpm install)
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
 COPY packages/types/package.json ./packages/types/
-COPY packages/ ./packages/
 
-# Install ALL workspace deps first (fixes tsc: not found)
+# Install deps FIRST
 RUN pnpm install --frozen-lockfile --ignore-scripts
 
-# NOW build packages safely
-RUN pnpm --filter @farmer-platform/types build
+# Build types THEN API
+COPY packages ./packages
+WORKDIR /app/packages/types
+RUN pnpm run build
 
-# Generate Prisma client & build with tsc
-WORKDIR /app/apps/api
+WORKDIR /app/apps/api  
+COPY apps/api ./  
 RUN npx prisma generate
 RUN pnpm run build
 
-# Verify dist exists (fail fast if build broken)
-RUN ls -la dist/src/main.js
+EXPOSE 3000
 
 ENV NODE_ENV=production
 

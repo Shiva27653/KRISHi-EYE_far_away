@@ -11,3 +11,9 @@ prompts
 apps/web
 apps/mobile
 apps/ai-service
+
+# Unblock workspace package.json for pnpm install (Render-only)
+!apps/api/package.json
+!apps/web/package.json  
+!packages/types/package.json
+!pnpm-workspace.yaml
