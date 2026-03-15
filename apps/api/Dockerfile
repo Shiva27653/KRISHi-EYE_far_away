@@ -3,11 +3,17 @@ FROM node:20-slim
 
 WORKDIR /app
 
-# System deps (OpenSSL required by Prisma, ca-certificates for downloads, glibc is native)
+# System deps:
+# - openssl/libssl: Required by Prisma
+# - ca-certificates: Required for secure downloads
+# - python3/make/g++: Required by sharp/native modules if prebuilts fail
 RUN apt-get update && apt-get install -y \
     openssl \
     libssl-dev \
     ca-certificates \
+    python3 \
+    make \
+    g++ \
     && rm -rf /var/lib/apt/lists/*
 
 # Enable pnpm
@@ -19,8 +25,8 @@ COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
 COPY packages/types/package.json ./packages/types/
 
-# Install deps FIRST
-RUN pnpm install --frozen-lockfile --ignore-scripts
+# Install deps (ALLOW SCRIPTS for sharp/onnxruntime-node native binaries)
+RUN pnpm install --frozen-lockfile
 
 # Build types THEN API
 COPY packages ./packages
