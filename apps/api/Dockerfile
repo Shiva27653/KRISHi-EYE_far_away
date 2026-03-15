@@ -20,7 +20,10 @@ RUN pnpm install --no-frozen-lockfile --ignore-scripts
 # Copy backend source
 COPY apps/api/ ./apps/api/
 
-# Generate Prisma client & build with tsc (nest build silently fails with nodenext)
+# Build workspace packages
+RUN pnpm --filter @farmer-platform/types build
+
+# Generate Prisma client & build with tsc
 WORKDIR /app/apps/api
 RUN npx prisma generate
 RUN npx tsc -p tsconfig.build.json --skipLibCheck || true
