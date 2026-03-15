@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { apiRequest } from '@/lib/api-client';
 import { useRouter } from 'next/navigation';
 import type { User } from "@farmer-platform/types";
+import { createSession } from '@/lib/auth';
 
 interface AuthContextType {
     user: User | null;
@@ -53,7 +54,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             body: JSON.stringify({ phone, otp }),
         });
         
-        // S-01: Brief settling delay for mobile cookie propagation
+        // S-01: Create session and store JWT in localStorage
+        await createSession(phone);
+        
+        // Brief settling delay for mobile/socket sync if needed
         await new Promise(resolve => setTimeout(resolve, 300));
         
         const userData = await apiRequest<User>('/v1/auth/sessions');
