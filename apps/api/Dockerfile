@@ -17,8 +17,9 @@ COPY packages/ ./packages/
 # Install all dependencies
 RUN pnpm install --no-frozen-lockfile --ignore-scripts
 
-# Copy backend source
-COPY apps/api/ ./apps/api/
+# Build workspace packages
+WORKDIR /app/packages/types
+RUN pnpm build
 
 # Generate Prisma client & build with tsc
 WORKDIR /app/apps/api
