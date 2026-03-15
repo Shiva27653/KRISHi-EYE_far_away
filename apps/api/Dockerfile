@@ -25,7 +25,7 @@ RUN pnpm run build
 
 WORKDIR /app/apps/api  
 COPY apps/api ./  
-RUN npx prisma generate
+RUN DATABASE_URL="postgresql://postgres:password@localhost:5432/db" npx prisma generate
 RUN pnpm run build
 
 EXPOSE 3000

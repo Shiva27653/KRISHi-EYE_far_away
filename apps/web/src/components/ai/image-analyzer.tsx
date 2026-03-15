@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { Camera, Upload, X, Loader2, AlertTriangle, CheckCircle2, ImageIcon } from 'lucide-react'
+import { apiRequest } from '@/lib/api-client'
 
 interface VisionResult {
     status: 'healthy' | 'infected' | 'uncertain' | 'error'
@@ -64,32 +65,10 @@ export function ImageAnalyzer({ onClose }: ImageAnalyzerProps) {
             const formData = new FormData()
             formData.append('file', file)
 
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
-            const resp = await fetch(`${baseUrl}/ai/analyze-image`, {
+            const rawData = await apiRequest<any>('/v1/ai/analyze-image', {
                 method: 'POST',
                 body: formData,
-                credentials: 'include',
             })
-
-            if (!resp.ok) {
-                const status = resp.status;
-                const errData = await resp.json().catch(() => ({}));
-                const message = errData.detail || errData.message || 'Analysis failed';
-
-                if (status === 413) {
-                    throw { status, message: 'Image is too large. Please use an image under 10MB.' };
-                } else if (status === 503) {
-                    throw { status, message: 'Vision AI is temporarily unavailable. The inference service is currently offline or missing required dependencies.' };
-                } else if (status === 400) {
-                    throw { status, message: `Invalid request: ${message}` };
-                } else if (status === 500) {
-                     throw { status, message: 'Image analysis failed due to a server error. Please try again with a different photo.' };
-                } else {
-                    throw { status, message: `System error (${status}): ${message}` };
-                }
-            }
-
-            const rawData = await resp.json()
             
             // Map the simplified backend payload into the frontend interface
             const data: VisionResult = {

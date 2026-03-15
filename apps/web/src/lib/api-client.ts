@@ -11,7 +11,9 @@ export async function apiRequest<T>(
     const normalizedEndpoint = endpoint.startsWith('/v1/') ? endpoint.slice(3) : endpoint;
 
     const headers = new Headers(options.headers);
-    headers.set('Content-Type', 'application/json');
+    if (!(options.body instanceof FormData)) {
+        headers.set('Content-Type', 'application/json');
+    }
 
     // S-01: Attach JWT from localStorage if present
     if (typeof window !== 'undefined') {
