@@ -13,8 +13,14 @@ export async function apiRequest<T>(
     const headers = new Headers(options.headers);
     headers.set('Content-Type', 'application/json');
 
-    // S-01: Explicitly remove legacy localStorage tokens if found to prevent confusion
+    // S-01: Attach JWT from localStorage if present
     if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+            headers.set('Authorization', `Bearer ${token}`);
+        }
+
+        // Explicitly remove legacy localStorage tokens if found to prevent confusion
         const legacyToken = localStorage.getItem('token') || localStorage.getItem('jwt') || localStorage.getItem('access_token');
         if (legacyToken) {
             localStorage.removeItem('token');

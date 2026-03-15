@@ -120,6 +120,15 @@ export class AuthController {
     return { message: 'Tokens refreshed' };
   }
 
+  @Post('sessions')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Create a JWT session for a verified phone' })
+  async createSession(@Body() dto: { phone: string }) {
+    const { phone } = dto;
+    const token = await this.authService.generateTokenForPhone(phone);
+    return { access_token: token, token_type: 'Bearer', expires_in: 86400 };
+  }
+
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Post('logout')

@@ -176,6 +176,11 @@ export class AuthService {
     }));
   }
 
+  async generateTokenForPhone(phone: string) {
+    const payload = { phone, sub: phone }; // JWT payload
+    return this.jwtService.sign(payload, { expiresIn: '24h' });
+  }
+
   private async generateTokens(userId: string, ipAddress: string, userAgent: string) {
     const accessToken = this.jwtService.sign({ sub: userId, id: userId, role: 'farmer' });
 
