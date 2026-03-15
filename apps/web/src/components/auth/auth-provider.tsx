@@ -18,7 +18,7 @@ interface AuthContextType {
     logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
@@ -27,8 +27,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         const checkAuth = async () => {
-            // S-01: Prevent firing sessions check if we're explicitly on the login page
-            // to reduce noisy 401s during initial bootstrap.
             if (window.location.pathname === '/login') {
                 setLoading(false);
                 return;
@@ -84,8 +82,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 }
 
-export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (!context) throw new Error('useAuth must be used within AuthProvider');
-    return context;
-};
+// NOTE: useAuth is now exported from '@/hooks/useAuth'
