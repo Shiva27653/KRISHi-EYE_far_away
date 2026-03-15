@@ -14,17 +14,16 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/
 COPY packages/ ./packages/
 
-# Install all dependencies
-RUN pnpm install --no-frozen-lockfile --ignore-scripts
+# Install ALL workspace deps first (fixes tsc: not found)
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
-# Build workspace packages
-WORKDIR /app/packages/types
-RUN pnpm build
+# NOW build packages safely
+RUN pnpm --filter @farmer-platform/types build
 
 # Generate Prisma client & build with tsc
 WORKDIR /app/apps/api
 RUN npx prisma generate
-RUN npx tsc -p tsconfig.build.json
+RUN pnpm run build
 
 # Verify dist exists (fail fast if build broken)
 RUN ls -la dist/src/main.js

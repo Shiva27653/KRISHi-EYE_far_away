@@ -12,5 +12,8 @@
     "dist",
     "src"
   ],
-  "sideEffects": false
+  "sideEffects": false,
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
 }
