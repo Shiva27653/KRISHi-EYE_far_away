@@ -68,12 +68,21 @@ export class AuthController {
       res.cookie('krishi_auth_token', tokens.access_token, { ...cookieOptions, maxAge: 15 * 60 * 1000 }); // 15m
       res.cookie('krishi_refresh_token', tokens.refresh_token, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 }); // 7d
 
+      const safeTokens = tokens as any;
+      if ('user' in safeTokens && safeTokens.user) {
+        return {
+          user: {
+            id: safeTokens.user.id,
+            phone: safeTokens.user.phone,
+            role: safeTokens.user.role
+          },
+          message: 'Login successful'
+        };
+      }
+
       return {
-        user: {
-            id: tokens.user?.id,
-            phone: tokens.user?.phone,
-            role: tokens.user?.role
-        },
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
         message: 'Login successful'
       };
     } catch (e: any) {
