@@ -1,10 +1,14 @@
-# Production Dockerfile for NestJS API — single-stage for reliability
-FROM node:20-alpine
+# Production Dockerfile for NestJS API — Debian Slim for GLIBC compatibility (ML/ONNX support)
+FROM node:20-slim
 
 WORKDIR /app
 
-# System deps (OpenSSL required by Prisma engine)
-RUN apk add --no-cache openssl
+# System deps (OpenSSL required by Prisma, ca-certificates for downloads, glibc is native)
+RUN apt-get update && apt-get install -y \
+    openssl \
+    libssl-dev \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 # Enable pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
