@@ -100,6 +100,11 @@ class VisionAnalysisService:
         self._missing_deps = False
         self._missing_onnxruntime = False
 
+    @property
+    def is_warm(self) -> bool:
+        """Check if models are already loaded."""
+        return self._initialized and self.classifier_session is not None
+
     def check_health(self) -> Dict[str, Any]:
         """Verify that vision dependencies are installed and models are available."""
         self._lazy_init()

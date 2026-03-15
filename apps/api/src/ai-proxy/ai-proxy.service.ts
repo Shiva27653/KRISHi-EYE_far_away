@@ -145,6 +145,9 @@ export class AiProxyService {
         contentType: file.mimetype,
       });
 
+      const isProduction = process.env.NODE_ENV === 'production';
+      const timeout = isProduction ? 60000 : 30000;
+
       const response = await firstValueFrom(
         this.httpService.post(
           `${this.aiServiceUrl}/vision/analyze`,
@@ -154,6 +157,7 @@ export class AiProxyService {
               ...formData.getHeaders(),
               'X-User-Id': userId,
             },
+            timeout,
             maxContentLength: 20 * 1024 * 1024,
             maxBodyLength: 20 * 1024 * 1024,
           }
@@ -162,6 +166,15 @@ export class AiProxyService {
 
       return response.data;
     } catch (error: any) {
+      const isWarmingUp = error.response?.status === 502 || error.response?.status === 504 || error.code === 'ECONNABORTED';
+      
+      if (isWarmingUp) {
+        throw new (require('@nestjs/common').HttpException)(
+          '🤖 AI scanner warming up... Please retry in 10 seconds.',
+          502
+        );
+      }
+
       if (error.response) {
         const status = error.response.status;
         const detail = error.response.data?.detail || error.message;

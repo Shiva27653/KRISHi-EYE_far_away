@@ -88,10 +88,15 @@ export function ImageAnalyzer({ onClose }: ImageAnalyzerProps) {
             }
 
             setResult(data)
-        } catch (err: unknown) {
+        } catch (err: any) {
             console.error('Vision analysis error:', err);
-            const message = err instanceof Error ? err.message : 'Failed to analyze image. Please check your connection and try again.';
-            setError(message);
+            if (err.status === 502 || err.status === 504) {
+                setError('🤖 AI scanner warming up... Please retry in 10 seconds.');
+            } else {
+                const message = err.message || 'Failed to analyze image. Please check your connection and try again.';
+                setError(message);
+            }
+            setResult(null);
         } finally {
             setAnalyzing(false)
         }
