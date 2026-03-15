@@ -18,6 +18,7 @@ import { DemoModule } from './demo/demo.module';
 import { HealthModule } from './health/health.module';
 import { AuditModule } from './audit/audit.module';
 import { PrismaModule } from './database/prisma.module';
+import { RagModule } from './rag/rag.module';
 import { RolesGuard } from './common/guards/roles.guard';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
@@ -43,6 +44,7 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
         DemoModule,
         HealthModule,
         AuditModule,
+        RagModule,
     ],
     controllers: [AppController],
     providers: [

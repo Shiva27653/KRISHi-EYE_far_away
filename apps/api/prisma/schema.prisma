@@ -342,3 +342,15 @@ model ConsentRecord {
 
   @@map("consent_records")
 }
+
+model AgriDoc {
+  id          String   @id @default(uuid())
+  content     String
+  crop        String?
+  state       String?
+  metadata    Json?
+  embedding   Unsupported("vector(384)")?  // all-MiniLM-L6-v2 dims
+  
+  @@map("agri_docs")
+  @@index([crop, state])
+}

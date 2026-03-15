@@ -84,30 +84,28 @@ export default function AskAIPage() {
         setError('')
 
         try {
-            const aiResponse = await apiRequest<any>('/v1/ai/chat', {
-                method: 'POST',
-                body: JSON.stringify({ question: userText, language: 'en' })
-            });
+            const params = new URLSearchParams({ q: userText, crop: 'cotton' });
+            const aiResponse = await apiRequest<any>(`/v1/rag/query?${params}`);
 
-            setMessages((prev) => [
-                ...prev,
-                {
-                    id: aiResponse.id || Date.now().toString(),
-                    role: 'ai',
-                    content: aiResponse.response,
-                    timestamp: aiResponse.createdAt || new Date().toISOString(),
-                    sources: aiResponse.sources || [],
-                    confidence: aiResponse.confidence
-                }
-            ]);
-        } catch (err) {
-            console.error('AI Request failed:', err);
             setMessages((prev) => [
                 ...prev,
                 {
                     id: Date.now().toString(),
                     role: 'ai',
-                    content: 'I apologize, but I am currently unable to reach the advisory network. Please try again later.',
+                    content: aiResponse.answer,
+                    timestamp: new Date().toISOString(),
+                    sources: aiResponse.sources?.map((s: any) => ({ title: s.crop, snippet: s.snippet })) || [],
+                    confidence: 'Grounded'
+                }
+            ]);
+        } catch (err) {
+            console.error('RAG Request failed:', err);
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: Date.now().toString(),
+                    role: 'ai',
+                    content: 'I apologize, but I am currently unable to reach the local advisory database. Please ensure Ollama is running.',
                     timestamp: new Date().toISOString()
                 }
             ]);
