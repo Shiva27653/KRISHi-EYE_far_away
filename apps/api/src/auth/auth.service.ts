@@ -176,8 +176,20 @@ export class AuthService {
     }));
   }
 
-  async generateTokenForPhone(phone: string) {
-    const payload = { phone, sub: phone }; // JWT payload
+  async generateTokenForPhone(phoneInput: string) {
+    const phone = this.normalizePhone(phoneInput);
+    const user = await this.prisma.user.findUnique({ where: { phone } });
+    
+    if (!user) {
+      throw new UnauthorizedException('User not found for session creation.');
+    }
+
+    const payload = { 
+        sub: user.id, 
+        id: user.id, 
+        phone: user.phone,
+        role: user.role 
+    };
     return this.jwtService.sign(payload, { expiresIn: '24h' });
   }
 
