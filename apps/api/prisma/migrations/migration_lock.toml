@@ -1,0 +1,4 @@
+# This is an auto-generated file.
+# It should be checked into your version control system.
+
+provider = "postgresql"
