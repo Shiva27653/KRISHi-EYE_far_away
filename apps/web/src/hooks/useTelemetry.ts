@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { socketClient } from '@/lib/socket-client';
-import { TelemetryEvents, LiveTelemetryPayload } from '@farmer-platform/types';
+import { TelemetryEvents } from '@farmer-platform/types';
+import type { LiveTelemetryPayload } from '@farmer-platform/types';
 
 export function useTelemetry(jobId: string) {
     const [latestPoint, setLatestPoint] = useState<LiveTelemetryPayload | null>(null);

@@ -65,7 +65,7 @@ function generatePlots(): Plot[] {
   return plots;
 }
 
-export function FarmHeatmap() {
+export function FarmHeatmap({ points }: { points?: any[] }) {
   const [plots, setPlots] = useState<Plot[]>([]);
   const [tractorPos, setTractorPos] = useState({ x: 0, y: ROAD_ROW });
   const [hoveredPlot, setHoveredPlot] = useState<Plot | null>(null);

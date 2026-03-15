@@ -1,18 +1,14 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { apiRequest } from '@/lib/api-client';
 import { useRouter } from 'next/navigation';
-
-interface User {
-    id: string;
-    phone: string;
-    role: string;
-}
+import type { User } from "@farmer-platform/types";
 
 interface AuthContextType {
     user: User | null;
     loading: boolean;
+    isAuthenticated: boolean;
     login: (phone: string, otp: string) => Promise<void>;
     requestOtp: (phone: string) => Promise<void>;
     logout: () => void;
@@ -76,10 +72,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, requestOtp, logout }}>
+        <AuthContext.Provider value={{ user, loading, isAuthenticated: !!user, login, requestOtp, logout }}>
             {children}
         </AuthContext.Provider>
     );
 }
 
-// NOTE: useAuth is now exported from '@/hooks/useAuth'
+export function useAuth(): AuthContextType {
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error("useAuth must be used within AuthProvider");
+    }
+    return context;
+}
