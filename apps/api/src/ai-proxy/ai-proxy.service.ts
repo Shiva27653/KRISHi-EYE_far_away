@@ -61,7 +61,7 @@ export class AiProxyService {
           : `I am currently in simplified mode. For "${question}", please consult your district KVK or the Kisan Call Centre at 1800-180-1551.`,
         createdAt: new Date().toISOString(),
         confidence: relevantSources.length > 0 ? 'High (Grounded)' : 'Moderate (General)',
-        sources: relevantSources.map(s => ({ 
+        sources: relevantSources.map((s: any) => ({ 
           id: s.id, 
           title: s.title,
           url: (s as any).sourceUrl || '#' 

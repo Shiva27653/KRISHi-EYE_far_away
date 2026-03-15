@@ -20,13 +20,10 @@ RUN pnpm install --no-frozen-lockfile --ignore-scripts
 # Copy backend source
 COPY apps/api/ ./apps/api/
 
-# Build workspace packages
-RUN pnpm --filter @farmer-platform/types build
-
 # Generate Prisma client & build with tsc
 WORKDIR /app/apps/api
 RUN npx prisma generate
-RUN npx tsc -p tsconfig.build.json --skipLibCheck || true
+RUN npx tsc -p tsconfig.build.json
 
 # Verify dist exists (fail fast if build broken)
 RUN ls -la dist/src/main.js
