@@ -63,79 +63,79 @@
 
 */
 -- DropForeignKey
-ALTER TABLE "advisory_logs" DROP CONSTRAINT IF EXISTS IF EXISTS "advisory_logs_farm_id_fkey";
+ALTER TABLE "advisory_logs" DROP CONSTRAINT IF EXISTS "advisory_logs_farm_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "advisory_logs" DROP CONSTRAINT IF EXISTS IF EXISTS "advisory_logs_user_id_fkey";
+ALTER TABLE "advisory_logs" DROP CONSTRAINT IF EXISTS "advisory_logs_user_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "analytics_snapshots" DROP CONSTRAINT IF EXISTS IF EXISTS "analytics_snapshots_farm_id_fkey";
+ALTER TABLE "analytics_snapshots" DROP CONSTRAINT IF EXISTS "analytics_snapshots_farm_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "audit_logs" DROP CONSTRAINT IF EXISTS IF EXISTS "audit_logs_actor_user_id_fkey";
+ALTER TABLE "audit_logs" DROP CONSTRAINT IF EXISTS "audit_logs_actor_user_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "consent_records" DROP CONSTRAINT IF EXISTS IF EXISTS "consent_records_user_id_fkey";
+ALTER TABLE "consent_records" DROP CONSTRAINT IF EXISTS "consent_records_user_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "farm_members" DROP CONSTRAINT IF EXISTS IF EXISTS "farm_members_farm_id_fkey";
+ALTER TABLE "farm_members" DROP CONSTRAINT IF EXISTS "farm_members_farm_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "farm_members" DROP CONSTRAINT IF EXISTS IF EXISTS "farm_members_user_id_fkey";
+ALTER TABLE "farm_members" DROP CONSTRAINT IF EXISTS "farm_members_user_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "farmer_profiles" DROP CONSTRAINT IF EXISTS IF EXISTS "farmer_profiles_user_id_fkey";
+ALTER TABLE "farmer_profiles" DROP CONSTRAINT IF EXISTS "farmer_profiles_user_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "farms" DROP CONSTRAINT IF EXISTS IF EXISTS "farms_owner_user_id_fkey";
+ALTER TABLE "farms" DROP CONSTRAINT IF EXISTS "farms_owner_user_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "fields" DROP CONSTRAINT IF EXISTS IF EXISTS "fields_farm_id_fkey";
+ALTER TABLE "fields" DROP CONSTRAINT IF EXISTS "fields_farm_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "knowledge_chunks" DROP CONSTRAINT IF EXISTS IF EXISTS "knowledge_chunks_source_id_fkey";
+ALTER TABLE "knowledge_chunks" DROP CONSTRAINT IF EXISTS "knowledge_chunks_source_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "operation_jobs" DROP CONSTRAINT IF EXISTS IF EXISTS "operation_jobs_field_id_fkey";
+ALTER TABLE "operation_jobs" DROP CONSTRAINT IF EXISTS "operation_jobs_field_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "operation_jobs" DROP CONSTRAINT IF EXISTS IF EXISTS "operation_jobs_tractor_id_fkey";
+ALTER TABLE "operation_jobs" DROP CONSTRAINT IF EXISTS "operation_jobs_tractor_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "sessions" DROP CONSTRAINT IF EXISTS IF EXISTS "sessions_user_id_fkey";
+ALTER TABLE "sessions" DROP CONSTRAINT IF EXISTS "sessions_user_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "support_contacts" DROP CONSTRAINT IF EXISTS IF EXISTS "support_contacts_organization_id_fkey";
+ALTER TABLE "support_contacts" DROP CONSTRAINT IF EXISTS "support_contacts_organization_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "support_tickets" DROP CONSTRAINT IF EXISTS IF EXISTS "support_tickets_assigned_to_user_id_fkey";
+ALTER TABLE "support_tickets" DROP CONSTRAINT IF EXISTS "support_tickets_assigned_to_user_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "support_tickets" DROP CONSTRAINT IF EXISTS IF EXISTS "support_tickets_farm_id_fkey";
+ALTER TABLE "support_tickets" DROP CONSTRAINT IF EXISTS "support_tickets_farm_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "support_tickets" DROP CONSTRAINT IF EXISTS IF EXISTS "support_tickets_field_id_fkey";
+ALTER TABLE "support_tickets" DROP CONSTRAINT IF EXISTS "support_tickets_field_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "support_tickets" DROP CONSTRAINT IF EXISTS IF EXISTS "support_tickets_job_id_fkey";
+ALTER TABLE "support_tickets" DROP CONSTRAINT IF EXISTS "support_tickets_job_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "support_tickets" DROP CONSTRAINT IF EXISTS IF EXISTS "support_tickets_tractor_id_fkey";
+ALTER TABLE "support_tickets" DROP CONSTRAINT IF EXISTS "support_tickets_tractor_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "support_tickets" DROP CONSTRAINT IF EXISTS IF EXISTS "support_tickets_user_id_fkey";
+ALTER TABLE "support_tickets" DROP CONSTRAINT IF EXISTS "support_tickets_user_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "telemetry_points" DROP CONSTRAINT IF EXISTS IF EXISTS "telemetry_points_job_id_fkey";
+ALTER TABLE "telemetry_points" DROP CONSTRAINT IF EXISTS "telemetry_points_job_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "telemetry_points" DROP CONSTRAINT IF EXISTS IF EXISTS "telemetry_points_tractor_id_fkey";
+ALTER TABLE "telemetry_points" DROP CONSTRAINT IF EXISTS "telemetry_points_tractor_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "tractors" DROP CONSTRAINT IF EXISTS IF EXISTS "tractors_farm_id_fkey";
+ALTER TABLE "tractors" DROP CONSTRAINT IF EXISTS "tractors_farm_id_fkey";
 
 -- DropIndex
-DROP INDEX IF EXISTS IF EXISTS "agri_docs_fts_idx";
+DROP INDEX IF EXISTS "agri_docs_fts_idx";
 
 -- AlterTable
 ALTER TABLE "advisory_logs" DROP CONSTRAINT IF EXISTS "advisory_logs_pkey",
