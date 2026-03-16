@@ -1,6 +1,5 @@
 import 'dotenv/config';
 import { NestFactory, HttpAdapterHost, Reflector } from '@nestjs/core';
-import { VersioningType } from '@nestjs/common';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
 import { ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
@@ -13,11 +12,6 @@ async function bootstrap() {
 
   // Security Headers (CSP, HSTS)
   app.use(helmet());
-
-  // Enable URI-based versioning globally
-  app.enableVersioning({
-    type: VersioningType.URI,
-  });
 
   // Cookie Parser for HTTP-Only Auth
   app.use(cookieParser());

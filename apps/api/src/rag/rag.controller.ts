@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { RagService } from './rag.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
-@Controller({ path: 'rag', version: '1' })
+@Controller('v1/rag')
 export class RagController {
   constructor(private ragService: RagService) {}
 
