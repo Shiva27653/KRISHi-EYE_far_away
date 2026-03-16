@@ -1,5 +1,6 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { Prisma } from '@prisma/client';
 import * as fs from 'fs';
 
 // We use dynamic imports for these to avoid CommonJS/ESM compatibility issues at boot
@@ -26,21 +27,26 @@ export class RagService implements OnModuleInit {
       // 2. PostgreSQL Full-Text Search (Phrase and keyword matching)
       // 3. deterministic ranking
 
-      const results: any[] = await this.prisma.$queryRawUnsafe(
-        `SELECT id, title, content, crop, state, ts_rank(fts_doc, websearch_to_tsquery('english', $1)) as rank
-         FROM agri_docs
-         WHERE fts_doc @@ websearch_to_tsquery('english', $1)
-         ${crop ? 'AND LOWER(crop) = LOWER($2)' : ''}
-         ${state ? 'AND LOWER(state) = LOWER($3)' : ''}
-         AND language = $4
-         ORDER BY rank DESC
-         LIMIT $5`,
-        question,
-        ...(crop ? [crop] : []),
-        ...(state ? [state] : []),
-        language,
-        k
-      );
+      // Build dynamic where clauses safely
+      const whereClauses: Prisma.Sql[] = [
+        Prisma.sql`fts_doc @@ websearch_to_tsquery('english', ${question})`
+      ];
+
+      if (crop) {
+        whereClauses.push(Prisma.sql`LOWER(crop) = LOWER(${crop})`);
+      }
+      if (state) {
+        whereClauses.push(Prisma.sql`LOWER(state) = LOWER(${state})`);
+      }
+      
+      whereClauses.push(Prisma.sql`language = ${language}`);
+
+      const results: any[] = await this.prisma.$queryRaw`
+        SELECT id, title, content, crop, state, ts_rank(fts_doc, websearch_to_tsquery('english', ${question})) as rank
+        FROM agri_docs
+        WHERE ${Prisma.join(whereClauses, ' AND ')}
+        ORDER BY rank DESC
+        LIMIT ${k}`;
 
       if (!results.length || (results[0].rank < 0.05)) {
         return {
