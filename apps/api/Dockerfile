@@ -19,7 +19,7 @@ COPY apps/web/package.json ./apps/web/
 COPY packages/types/package.json ./packages/types/
 
 # Install dependencies (shamefully-hoist for better binary resolution)
-RUN pnpm install --frozen-lockfile --shamefully-hoist
+RUN pnpm install --no-frozen-lockfile --shamefully-hoist
 
 # Explicitly rebuild sharp for linux-x64
 RUN npm rebuild sharp --platform=linux --arch=x64
