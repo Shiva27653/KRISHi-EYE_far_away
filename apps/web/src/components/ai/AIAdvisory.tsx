@@ -52,7 +52,7 @@ export function AIAdvisory() {
       const params = new URLSearchParams({ q: userText })
       if (cropFilter && cropFilter !== 'general') params.append('crop', cropFilter)
       
-      const res = await apiRequest<any>(`/v1/rag/query?${params}`)
+      const res = await apiRequest<any>(`/rag/query?${params}`)
       
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
@@ -66,7 +66,7 @@ export function AIAdvisory() {
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'ai',
-        content: "I'm having trouble connecting to the local Advisory engine. Please ensure Ollama is running.",
+        content: "I'm having trouble connecting to the local Advisory engine. Please check your network or try again in a few moments.",
         timestamp: new Date().toISOString()
       }])
     } finally {

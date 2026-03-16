@@ -85,7 +85,7 @@ export default function AskAIPage() {
 
         try {
             const params = new URLSearchParams({ q: userText, crop: 'cotton' });
-            const aiResponse = await apiRequest<any>(`/v1/rag/query?${params}`);
+            const aiResponse = await apiRequest<any>(`/rag/query?${params}`);
 
             setMessages((prev) => [
                 ...prev,
@@ -105,7 +105,7 @@ export default function AskAIPage() {
                 {
                     id: Date.now().toString(),
                     role: 'ai',
-                    content: 'I apologize, but I am currently unable to reach the local advisory database. Please ensure Ollama is running.',
+                    content: 'I apologize, but I am currently unable to reach the advisory database. Please try again or check your connectivity.',
                     timestamp: new Date().toISOString()
                 }
             ]);

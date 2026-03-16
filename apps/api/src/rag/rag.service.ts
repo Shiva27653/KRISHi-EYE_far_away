@@ -6,7 +6,6 @@ import * as fs from 'fs';
 // We use dynamic imports for these to avoid CommonJS/ESM compatibility issues at boot
 let pipeline: any;
 let env: any;
-let ollama: any;
 const csv = require('csv-parser');
 
 @Injectable()
