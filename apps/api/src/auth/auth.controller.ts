@@ -52,7 +52,7 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Invalid or expired OTP.' })
   async verifyOtp(@Body() dto: VerifyOtpDto, @Ip() ip: string, @Req() req: Request, @Res() res: Response) {
     const userAgent = req.headers['user-agent'] || 'Unknown';
-    return await this.authService.verifyOtp(dto.phone, dto.otp, ip, userAgent, res);
+    await this.authService.verifyOtp(dto.phone, dto.otp, ip, userAgent, res);
   }
 
   @Post('refresh')
