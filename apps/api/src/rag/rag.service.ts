@@ -21,12 +21,8 @@ export class RagService implements OnModuleInit {
     try {
       const { crop, state, language = 'en' } = context || {};
 
-      // Build base where clause
-      const baseFilters: Prisma.Sql[] = [
-        Prisma.sql`language = ${language}`
-      ];
-
-      // Relaxed crop filter: Match specific crop OR 'general'
+      // Base filters
+      const baseFilters: Prisma.Sql[] = [Prisma.sql`language = ${language}`];
       if (crop) {
         baseFilters.push(Prisma.sql`(LOWER(crop) = LOWER(${crop}) OR LOWER(crop) = 'general')`);
       }
@@ -34,37 +30,47 @@ export class RagService implements OnModuleInit {
         baseFilters.push(Prisma.sql`(LOWER(state) = LOWER(${state}) OR LOWER(state) = 'pan-india')`);
       }
 
-      // Tiered Search Strategy
-      // Tier 1: Strict websearch (requires most words)
+      // Cleanup and tokenize the question for flexible queries
+      const words = question.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+      const orQuery = words.join(' | ');
+      const cropAnchor = crop ? crop.toLowerCase() : (words[0] || 'agriculture');
+
+      // TIER 1: Strict Websearch (Phrase-aware)
       let results: any[] = await this.prisma.$queryRaw`
         SELECT id, title, content, crop, state, ts_rank(fts_doc, websearch_to_tsquery('english', ${question})) as rank
         FROM agri_docs
         WHERE ${Prisma.join([...baseFilters, Prisma.sql`fts_doc @@ websearch_to_tsquery('english', ${question})`], ' AND ')}
-        ORDER BY rank DESC
-        LIMIT ${k}`;
+        ORDER BY rank DESC LIMIT ${k}`;
 
-      // Tier 2: Fallback to plainto_tsquery if Tier 1 is too strict
+      // TIER 2: Standard AND (Requires all terms)
       if (!results.length) {
         results = await this.prisma.$queryRaw`
           SELECT id, title, content, crop, state, ts_rank(fts_doc, plainto_tsquery('english', ${question})) as rank
           FROM agri_docs
           WHERE ${Prisma.join([...baseFilters, Prisma.sql`fts_doc @@ plainto_tsquery('english', ${question})`], ' AND ')}
-          ORDER BY rank DESC
-          LIMIT ${k}`;
+          ORDER BY rank DESC LIMIT ${k}`;
       }
 
-      // Tier 3: If still no results, try WITHOUT crop/state filters as a last resort for knowledge
+      // TIER 3: Anchored OR (Must have crop/anchor, maybe have descriptive words)
+      if (!results.length && words.length > 1) {
+        const anchoredTsQuery = `${cropAnchor} & (${orQuery})`;
+        results = await this.prisma.$queryRaw`
+          SELECT id, title, content, crop, state, ts_rank(fts_doc, to_tsquery('english', ${anchoredTsQuery})) as rank
+          FROM agri_docs
+          WHERE ${Prisma.join([...baseFilters, Prisma.sql`fts_doc @@ to_tsquery('english', ${anchoredTsQuery})`], ' AND ')}
+          ORDER BY rank DESC LIMIT ${k}`;
+      }
+
+      // TIER 4: Global Ranked OR (Any word, highest rank first, no filters)
       if (!results.length) {
         results = await this.prisma.$queryRaw`
-          SELECT id, title, content, crop, state, ts_rank(fts_doc, plainto_tsquery('english', ${question})) as rank
+          SELECT id, title, content, crop, state, ts_rank(fts_doc, to_tsquery('english', ${orQuery})) as rank
           FROM agri_docs
-          WHERE fts_doc @@ plainto_tsquery('english', ${question})
+          WHERE fts_doc @@ to_tsquery('english', ${orQuery})
           AND language = ${language}
-          ORDER BY rank DESC
-          LIMIT ${k}`;
+          ORDER BY rank DESC LIMIT ${k}`;
       }
 
-      // Threshold check: Even broad search must have some relevance
       if (!results.length || (results[0].rank < 0.01)) {
         return {
           answer: "I couldn't find a high-confidence match for your specific query in our grounded records. However, I am still monitoring local agricultural advisory databases. Please consult your local KVK for critical issues.",
@@ -76,24 +82,24 @@ export class RagService implements OnModuleInit {
       }
 
       const topMatch = results[0];
-      const answer = `Based on agricultural records (${topMatch.crop}): ${topMatch.content.slice(0, 600)}${topMatch.content.length > 600 ? '...' : ''}`;
+      const answer = `According to agricultural advisory records (${topMatch.crop}): ${topMatch.content.slice(0, 650)}${topMatch.content.length > 650 ? '...' : ''}`;
 
       return {
         answer: answer.trim(),
         confidence: Math.min(topMatch.rank * 10, 1.0),
         sources: results.map(r => ({
           title: r.title || 'Agri Document',
-          snippet: r.content.slice(0, 200) + '...',
+          snippet: r.content.slice(0, 220) + '...',
           crop: r.crop,
           state: r.state
         })),
         filtersUsed: { crop, state, language },
-        fallbackUsed: false
+        fallbackUsed: results.length < k || results[0].rank < 0.1
       };
     } catch (err) {
       this.logger.error(`Retrieval Error: ${err.message}`);
       return {
-        answer: "The advisory system is currently processing your request. Please try again shortly.",
+        answer: "The advisory system is currently processing high query volumes. Please try again shortly.",
         confidence: 0,
         sources: [],
         error: true
