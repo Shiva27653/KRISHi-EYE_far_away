@@ -21,35 +21,53 @@ export class RagService implements OnModuleInit {
     try {
       const { crop, state, language = 'en' } = context || {};
 
-      // Tiered Retrieval Strategy:
-      // 1. Metadata filtering (Strict)
-      // 2. PostgreSQL Full-Text Search (Phrase and keyword matching)
-      // 3. deterministic ranking
-
-      // Build dynamic where clauses safely
-      const whereClauses: Prisma.Sql[] = [
-        Prisma.sql`fts_doc @@ websearch_to_tsquery('english', ${question})`
+      // Build base where clause
+      const baseFilters: Prisma.Sql[] = [
+        Prisma.sql`language = ${language}`
       ];
 
+      // Relaxed crop filter: Match specific crop OR 'general'
       if (crop) {
-        whereClauses.push(Prisma.sql`LOWER(crop) = LOWER(${crop})`);
+        baseFilters.push(Prisma.sql`(LOWER(crop) = LOWER(${crop}) OR LOWER(crop) = 'general')`);
       }
       if (state) {
-        whereClauses.push(Prisma.sql`LOWER(state) = LOWER(${state})`);
+        baseFilters.push(Prisma.sql`(LOWER(state) = LOWER(${state}) OR LOWER(state) = 'pan-india')`);
       }
-      
-      whereClauses.push(Prisma.sql`language = ${language}`);
 
-      const results: any[] = await this.prisma.$queryRaw`
+      // Tiered Search Strategy
+      // Tier 1: Strict websearch (requires most words)
+      let results: any[] = await this.prisma.$queryRaw`
         SELECT id, title, content, crop, state, ts_rank(fts_doc, websearch_to_tsquery('english', ${question})) as rank
         FROM agri_docs
-        WHERE ${Prisma.join(whereClauses, ' AND ')}
+        WHERE ${Prisma.join([...baseFilters, Prisma.sql`fts_doc @@ websearch_to_tsquery('english', ${question})`], ' AND ')}
         ORDER BY rank DESC
         LIMIT ${k}`;
 
-      if (!results.length || (results[0].rank < 0.05)) {
+      // Tier 2: Fallback to plainto_tsquery if Tier 1 is too strict
+      if (!results.length) {
+        results = await this.prisma.$queryRaw`
+          SELECT id, title, content, crop, state, ts_rank(fts_doc, plainto_tsquery('english', ${question})) as rank
+          FROM agri_docs
+          WHERE ${Prisma.join([...baseFilters, Prisma.sql`fts_doc @@ plainto_tsquery('english', ${question})`], ' AND ')}
+          ORDER BY rank DESC
+          LIMIT ${k}`;
+      }
+
+      // Tier 3: If still no results, try WITHOUT crop/state filters as a last resort for knowledge
+      if (!results.length) {
+        results = await this.prisma.$queryRaw`
+          SELECT id, title, content, crop, state, ts_rank(fts_doc, plainto_tsquery('english', ${question})) as rank
+          FROM agri_docs
+          WHERE fts_doc @@ plainto_tsquery('english', ${question})
+          AND language = ${language}
+          ORDER BY rank DESC
+          LIMIT ${k}`;
+      }
+
+      // Threshold check: Even broad search must have some relevance
+      if (!results.length || (results[0].rank < 0.01)) {
         return {
-          answer: "No highly relevant grounded agricultural data found for your specific query in our verified datasets. Please consult your local Krishi Vigyan Kendra (KVK) or a certified agronomist for critical issues.",
+          answer: "I couldn't find a high-confidence match for your specific query in our grounded records. However, I am still monitoring local agricultural advisory databases. Please consult your local KVK for critical issues.",
           confidence: 0,
           sources: [],
           fallbackUsed: true,
@@ -57,17 +75,15 @@ export class RagService implements OnModuleInit {
         };
       }
 
-      // Deterministic Synthesis: 
-      // Instead of an LLM, we combine the top snippets into a structured response.
       const topMatch = results[0];
-      const answer = `Based on records from ${topMatch.crop || 'agricultural'} datasets: ${topMatch.content.slice(0, 500)}${topMatch.content.length > 500 ? '...' : ''}`;
+      const answer = `Based on agricultural records (${topMatch.crop}): ${topMatch.content.slice(0, 600)}${topMatch.content.length > 600 ? '...' : ''}`;
 
       return {
         answer: answer.trim(),
-        confidence: Math.min(topMatch.rank * 10, 1.0), // Simple scaling for UI
+        confidence: Math.min(topMatch.rank * 10, 1.0),
         sources: results.map(r => ({
           title: r.title || 'Agri Document',
-          snippet: r.content.slice(0, 160) + '...',
+          snippet: r.content.slice(0, 200) + '...',
           crop: r.crop,
           state: r.state
         })),
@@ -77,7 +93,7 @@ export class RagService implements OnModuleInit {
     } catch (err) {
       this.logger.error(`Retrieval Error: ${err.message}`);
       return {
-        answer: "The advisory system is currently undergoing maintenance. Please try again later.",
+        answer: "The advisory system is currently processing your request. Please try again shortly.",
         confidence: 0,
         sources: [],
         error: true
