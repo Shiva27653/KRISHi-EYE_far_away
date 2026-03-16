@@ -11,7 +11,7 @@ datasource db {
 }
 
 model User {
-  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                String          @id @default(uuid()) @db.Uuid
   phone             String          @unique @db.VarChar(20)
   name              String?
   role              String
@@ -32,7 +32,7 @@ model User {
 }
 
 model Session {
-  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id               String    @id @default(uuid()) @db.Uuid
   userId           String    @map("user_id") @db.Uuid
   refreshTokenHash String    @map("refresh_token_hash")
   deviceLabel      String?   @map("device_label")
@@ -47,7 +47,7 @@ model Session {
 }
 
 model FarmerProfile {
-  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                 String   @id @default(uuid()) @db.Uuid
   userId             String   @unique @map("user_id") @db.Uuid
   village            String?
   taluka             String?
@@ -64,7 +64,7 @@ model FarmerProfile {
 }
 
 model Farm {
-  id             String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id             String                    @id @default(uuid()) @db.Uuid
   ownerUserId    String                    @map("owner_user_id") @db.Uuid
   name           String
   district       String
@@ -85,7 +85,7 @@ model Farm {
 }
 
 model FarmMember {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id        String   @id @default(uuid()) @db.Uuid
   farmId    String   @map("farm_id") @db.Uuid
   userId    String   @map("user_id") @db.Uuid
   role      String
@@ -97,7 +97,7 @@ model FarmMember {
 }
 
 model Field {
-  id             String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id             String                    @id @default(uuid()) @db.Uuid
   farmId         String                    @map("farm_id") @db.Uuid
   name           String
   crop           String?
@@ -115,7 +115,7 @@ model Field {
 }
 
 model Tractor {
-  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id              String           @id @default(uuid()) @db.Uuid
   farmId          String           @map("farm_id") @db.Uuid
   label           String
   description     String?
@@ -131,7 +131,7 @@ model Tractor {
 }
 
 model OperationJob {
-  id                 String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                 String           @id @default(uuid()) @db.Uuid
   tractorId          String           @map("tractor_id") @db.Uuid
   fieldId            String           @map("field_id") @db.Uuid
   status             String
@@ -173,7 +173,7 @@ model TelemetryPoint {
 }
 
 model AnalyticsSnapshot {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
   farmId      String    @map("farm_id") @db.Uuid
   periodLabel String    @map("period_label")
   periodStart DateTime? @map("period_start")
@@ -187,7 +187,7 @@ model AnalyticsSnapshot {
 }
 
 model SupportOrganization {
-  id         String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id         String           @id @default(uuid()) @db.Uuid
   name       String
   category   String
   website    String?
@@ -200,7 +200,7 @@ model SupportOrganization {
 }
 
 model SupportContact {
-  id             String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id             String              @id @default(uuid()) @db.Uuid
   organizationId String              @map("organization_id") @db.Uuid
   state          String?
   district       String?
@@ -219,7 +219,7 @@ model SupportContact {
 }
 
 model SupportTicket {
-  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                String        @id @default(uuid()) @db.Uuid
   userId            String        @map("user_id") @db.Uuid
   farmId            String?       @map("farm_id") @db.Uuid
   category          String?
@@ -245,7 +245,7 @@ model SupportTicket {
 }
 
 model KnowledgeSource {
-  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id             String           @id @default(uuid()) @db.Uuid
   title          String
   sourceType     String           @map("source_type")
   sourceUrl      String?          @map("source_url")
@@ -264,7 +264,7 @@ model KnowledgeSource {
 }
 
 model KnowledgeChunk {
-  id        String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id        String                 @id @default(uuid()) @db.Uuid
   sourceId  String                 @map("source_id") @db.Uuid
   chunkText String                 @map("chunk_text")
   embedding Unsupported("vector")?
@@ -277,7 +277,7 @@ model KnowledgeChunk {
 }
 
 model AdvisoryLog {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id         String   @id @default(uuid()) @db.Uuid
   userId     String   @map("user_id") @db.Uuid
   farmId     String?  @map("farm_id") @db.Uuid
   question   String
@@ -297,7 +297,7 @@ model AdvisoryLog {
 }
 
 model AuditLog {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id          String   @id @default(uuid()) @db.Uuid
   actorUserId String?  @map("actor_user_id") @db.Uuid
   entityType  String   @map("entity_type")
   entityId    String   @map("entity_id")
@@ -311,7 +311,7 @@ model AuditLog {
 }
 
 model ConsentRecord {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id          String   @id @default(uuid()) @db.Uuid
   userId      String   @map("user_id") @db.Uuid
   consentType String   @map("consent_type")
   accepted    Boolean

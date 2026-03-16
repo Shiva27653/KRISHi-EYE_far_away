@@ -65,16 +65,14 @@ export class AuthService {
     const phone = this.normalizePhone(phoneInput);
     const record = this.otps[phone];
 
-    const sendResponse = (status: number, body: any) => {
-      if (!responded) {
-        responded = true;
-        return res.status(status).json(body);
-      }
-      this.logger.warn(`Duplicate response attempted for phone ${phone}. Blocked by guard.`);
+    const reply = (status: number, body: any) => {
+      if (responded) return;
+      responded = true;
+      return res.status(status).json(body);
     };
 
     if (!record) {
-      return sendResponse(401, { error: 'No OTP requested or OTP expired.' });
+      return reply(401, { error: 'No OTP requested or OTP expired.' });
     }
 
     // S-01: Grace window for duplicate mobile hits
@@ -82,22 +80,22 @@ export class AuthService {
         const diff = new Date().getTime() - record.verifiedAt.getTime();
         if (diff < 10000) { // 10 second window
             this.logger.debug(`Grace window hit for phone ${phone}. Returning previous tokens.`);
-            return sendResponse(200, { ...record.lastTokens, message: 'Login successful (cached)' });
+            return reply(200, { ...record.lastTokens, message: 'Login successful (cached)' });
         }
     }
 
     if (record.expiresAt < new Date()) {
       delete this.otps[phone];
-      return sendResponse(401, { error: 'OTP expired.' });
+      return reply(401, { error: 'OTP expired.' });
     }
 
     if (record.otp !== otp) {
       record.attempts++;
       if (record.attempts >= 5) {
         delete this.otps[phone];
-        return sendResponse(401, { error: 'Too many failed attempts. OTP invalidated.' });
+        return reply(401, { error: 'Too many failed attempts. OTP invalidated.' });
       }
-      return sendResponse(401, { error: 'Invalid OTP.' });
+      return reply(401, { error: 'Invalid OTP.' });
     }
 
     try {
@@ -130,7 +128,7 @@ export class AuthService {
       res.cookie('krishi_auth_token', tokens.access_token, { ...cookieOptions, maxAge: 15 * 60 * 1000 }); // 15m
       res.cookie('krishi_refresh_token', tokens.refresh_token, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 }); // 7d
 
-      return sendResponse(200, {
+      return reply(200, {
         ...tokens,
         user: {
           id: user.id,
@@ -141,7 +139,7 @@ export class AuthService {
       });
     } catch (err) {
       this.logger.error(`Database Error during OTP verify: ${err.message}`);
-      return sendResponse(500, { error: 'Internal server error during authentication' });
+      return reply(500, { error: 'Internal server error during authentication', details: err.message });
     }
   }
 

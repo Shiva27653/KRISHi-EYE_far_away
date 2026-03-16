@@ -33,6 +33,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
             this.logger.warn(`HttpException: ${JSON.stringify(responseBody)}`);
         }
 
-        httpAdapter.reply(ctx.getResponse(), responseBody, httpStatus);
+        const res = ctx.getResponse();
+        if (res.headersSent) {
+            this.logger.warn(`Headers already sent for ${responseBody.path}. Skipping redundant exception response.`);
+            return;
+        }
+
+        httpAdapter.reply(res, responseBody, httpStatus);
     }
 }
