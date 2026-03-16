@@ -18,4 +18,10 @@ export class RagController {
     if (!q) return { answer: 'Please provide a search query.' };
     return this.ragService.query(q, { crop, state, language: lang });
   }
+
+  @Get('stats')
+  @ApiOperation({ summary: 'Get ingestion statistics' })
+  async getStats() {
+    return this.ragService.getStats();
+  }
 }
