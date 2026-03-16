@@ -1,23 +1,21 @@
 import { Controller, Post, Get, Body, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { RagService } from './rag.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
-@Controller('v1/rag')
+@Controller('v1/advisor')
 export class RagController {
   constructor(private ragService: RagService) {}
 
-  @Post('ingest')
-  async ingest(@Body() { file, crop }: { file: string, crop?: string }) {
-    const count = await this.ragService.ingestCsv(file, crop);
-    return { status: 'success', ingested: count };
-  }
-
   @Get('query')
+  @ApiOperation({ summary: 'Query the grounded retrieval advisor' })
   async query(
     @Query('q') q: string,
-    @Query('crop') crop?: string
+    @Query('crop') crop?: string,
+    @Query('state') state?: string,
+    @Query('lang') lang?: string
   ) {
-    if (!q) return { answer: 'Please provide a question.' };
-    return this.ragService.query(q, crop);
+    if (!q) return { answer: 'Please provide a search query.' };
+    return this.ragService.query(q, { crop, state, language: lang });
   }
 }

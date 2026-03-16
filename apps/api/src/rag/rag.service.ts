@@ -11,178 +11,102 @@ const csv = require('csv-parser');
 @Injectable()
 export class RagService implements OnModuleInit {
   private readonly logger = new Logger(RagService.name);
-  private embedder: any;
-  private isInitializing = false;
-  private initializationError: string | null = null;
-
   constructor(private prisma: PrismaService) {}
 
   async onModuleInit() {
-    // Non-blocking initialization to prevent startup timeouts on Render
-    this.initEmbedder().catch(err => {
-      this.logger.error(`Failed to initialize RAG embedder: ${err.message}`);
-      this.initializationError = err.message;
-    });
+    this.logger.log('🚀 Retrieval Advisor active (Mode: Deterministic FTS)');
   }
 
-  async initEmbedder() {
-    if (this.isInitializing || this.embedder) return;
-    this.isInitializing = true;
-    
+  async query(question: string, context?: { crop?: string; state?: string; language?: string }, k = 3) {
     try {
-      if (process.env.NODE_ENV === 'production') {
-        this.logger.log('⏭️ RAG local embedder disabled in production (using local Ollama strategy)');
-        return;
-      }
+      const { crop, state, language = 'en' } = context || {};
 
-      this.logger.log('🏗️ Loading RAG dependencies and models...');
-      
-      // Dynamic imports for ESM compatibility
-      const transformers = await import('@xenova/transformers');
-      pipeline = transformers.pipeline;
-      env = transformers.env;
-      
-      const ollamaModule = await import('ollama');
-      ollama = ollamaModule.default || ollamaModule;
+      // Tiered Retrieval Strategy:
+      // 1. Metadata filtering (Strict)
+      // 2. PostgreSQL Full-Text Search (Phrase and keyword matching)
+      // 3. deterministic ranking
 
-      env.allowLocalModels = false;
-      env.allowRemoteModels = true;
-      
-      // This may take a while on Render (downloads ~80MB)
-      this.embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
-      this.logger.log('✅ RAG Embedder ready');
-      this.initializationError = null;
-    } catch (err) {
-      this.initializationError = err.message;
-      this.logger.error(`RAG Initialization Error: ${err.message}`);
-      throw err;
-    } finally {
-      this.isInitializing = false;
-    }
-  }
-
-  async embed(text: string): Promise<number[]> {
-    if (!this.embedder) {
-      await this.initEmbedder();
-    }
-    
-    const output = await this.embedder(text, {
-      pooling: 'mean',
-      normalize: true,
-    });
-    return Array.from(output.data);
-  }
-
-  async ingestCsv(filePath: string, cropPrefix = '') {
-    if (!fs.existsSync(filePath)) {
-      this.logger.warn(`Dataset file not found: ${filePath}. Skipping ingestion.`);
-      return 0;
-    }
-
-    const docs: any[] = [];
-    return new Promise((resolve, reject) => {
-      fs.createReadStream(filePath)
-        .pipe(csv())
-        .on('data', (row: any) => {
-          const question = row.Question || row.question;
-          const answer = row.Answer || row.answer;
-          const crop = row.Crop || row.crop || cropPrefix || 'general';
-          const state = row.State || row.state || 'pan-india';
-
-          if (question && answer) {
-            const content = `${question}\n\n${answer}`.trim();
-            if (content.length > 50) {
-              docs.push({
-                content,
-                crop: crop.toLowerCase(),
-                state: state.toLowerCase()
-              });
-            }
-          }
-        })
-        .on('end', async () => {
-          this.logger.log(`📥 Ingesting ${docs.length} docs from ${filePath}...`);
-          
-          const batchSize = 25; // Smaller batch for stability
-          for (let i = 0; i < docs.length; i += batchSize) {
-            const batch = docs.slice(i, i + batchSize);
-            await Promise.all(batch.map(async (doc) => {
-              try {
-                const vector = await this.embed(doc.content);
-                const vectorStr = `[${vector.join(',')}]`;
-                
-                await this.prisma.$executeRawUnsafe(
-                  `INSERT INTO agri_docs (id, content, crop, state, embedding) 
-                   VALUES ($1, $2, $3, $4, $5::vector)
-                   ON CONFLICT DO NOTHING`, // Safer for seeding
-                  require('crypto').randomUUID(),
-                  doc.content,
-                  doc.crop,
-                  doc.state,
-                  vectorStr
-                );
-              } catch (e) {
-                // Silently skip if one doc fails
-              }
-            }));
-            if (i % 100 === 0) this.logger.log(`✅ Progress: ${i}/${docs.length}`);
-            if (i >= 300) break; // Aggressive limit for Render demo
-          }
-          resolve(docs.length);
-        })
-        .on('error', reject);
-    });
-  }
-
-  async query(question: string, crop?: string, k = 3) {
-    try {
-      const queryVector = await this.embed(question);
-      const vectorStr = `[${queryVector.join(',')}]`;
-      
       const results: any[] = await this.prisma.$queryRawUnsafe(
-        `SELECT id, content, crop, state, (embedding <=> $1::vector) as distance
+        `SELECT id, title, content, crop, state, ts_rank(fts_doc, websearch_to_tsquery('english', $1)) as rank
          FROM agri_docs
-         ${crop ? 'WHERE crop = $2' : ''}
-         ORDER BY embedding <=> $1::vector
-         LIMIT $3`,
-        vectorStr,
-        ...(crop ? [crop.toLowerCase()] : []),
+         WHERE fts_doc @@ websearch_to_tsquery('english', $1)
+         ${crop ? 'AND LOWER(crop) = LOWER($2)' : ''}
+         ${state ? 'AND LOWER(state) = LOWER($3)' : ''}
+         AND language = $4
+         ORDER BY rank DESC
+         LIMIT $5`,
+        question,
+        ...(crop ? [crop] : []),
+        ...(state ? [state] : []),
+        language,
         k
       );
-      
-      if (!results.length) {
-        return { answer: "I couldn't find specific grounded data for this query in my current database.", sources: [] };
+
+      if (!results.length || (results[0].rank < 0.05)) {
+        return {
+          answer: "No highly relevant grounded agricultural data found for your specific query in our verified datasets. Please consult your local Krishi Vigyan Kendra (KVK) or a certified agronomist for critical issues.",
+          confidence: 0,
+          sources: [],
+          fallbackUsed: true,
+          datasetCoverage: await this.getDatasetCoverage()
+        };
       }
 
-      const context = results.map(d => d.content).join('\n\n');
-      
-      if (!ollama) {
-        // One last attempt to load ollama
-        const ollamaModule = await import('ollama');
-        ollama = ollamaModule.default || ollamaModule;
-      }
+      // Deterministic Synthesis: 
+      // Instead of an LLM, we combine the top snippets into a structured response.
+      const topMatch = results[0];
+      const answer = `Based on records from ${topMatch.crop || 'agricultural'} datasets: ${topMatch.content.slice(0, 500)}${topMatch.content.length > 500 ? '...' : ''}`;
 
-      const response = await ollama.chat({
-        model: 'tinyllama',
-        messages: [
-          {
-            role: 'system',
-            content: `Use the following context to answer: ${context}`
-          },
-          { role: 'user', content: question }
-        ]
-      });
-      
       return {
-        answer: response.message.content,
-        sources: results.map(d => ({ crop: d.crop, snippet: d.content.slice(0, 100) }))
+        answer: answer.trim(),
+        confidence: Math.min(topMatch.rank * 10, 1.0), // Simple scaling for UI
+        sources: results.map(r => ({
+          title: r.title || 'Agri Document',
+          snippet: r.content.slice(0, 160) + '...',
+          crop: r.crop,
+          state: r.state
+        })),
+        filtersUsed: { crop, state, language },
+        fallbackUsed: false
       };
     } catch (err) {
-      this.logger.error(`Query Error: ${err.message}`);
+      this.logger.error(`Retrieval Error: ${err.message}`);
       return {
-        answer: `Advisory search is currently warming up or Ollama is offline. Error: ${err.message}`,
-        sources: []
+        answer: "The advisory system is currently undergoing maintenance. Please try again later.",
+        confidence: 0,
+        sources: [],
+        error: true
       };
+    }
+  }
+
+  async getDatasetCoverage() {
+    try {
+      const stats: any[] = await this.prisma.$queryRaw`
+        SELECT crop, count(*) as count 
+        FROM agri_docs 
+        GROUP BY crop 
+        ORDER BY count DESC 
+        LIMIT 10`;
+      return stats.map(s => `${s.crop} (${s.count})`);
+    } catch {
+      return [];
+    }
+  }
+
+  async getStats() {
+    try {
+      const count = await this.prisma.agriDoc.count();
+      const datasets: any[] = await this.prisma.$queryRaw`
+        SELECT source_dataset as name, count(*) as count 
+        FROM agri_docs 
+        GROUP BY source_dataset`;
+      return {
+        totalDocuments: count,
+        datasets: datasets.map(d => ({ name: d.name, count: Number(d.count) }))
+      };
+    } catch (err) {
+      return { totalDocuments: 0, datasets: [], error: err.message };
     }
   }
 }

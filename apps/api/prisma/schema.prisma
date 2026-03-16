@@ -344,13 +344,21 @@ model ConsentRecord {
 }
 
 model AgriDoc {
-  id          String   @id @default(uuid())
-  content     String
-  crop        String?
-  state       String?
-  metadata    Json?
-  embedding   Unsupported("vector(384)")?  // all-MiniLM-L6-v2 dims
-  
+  id             String   @id @default(uuid())
+  title          String?
+  content        String
+  crop           String?
+  state          String?
+  district       String?
+  language       String   @default("en")
+  sourceDataset  String?  @map("source_dataset")
+  sourceFile     String?  @map("source_file")
+  tags           String[]
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
   @@map("agri_docs")
-  @@index([crop, state])
+  @@index([crop, state, language])
+  @@index([sourceDataset])
 }

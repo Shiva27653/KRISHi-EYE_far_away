@@ -154,21 +154,8 @@ async function main() {
     }
     console.log('✅ Support contacts seeded.')
     
-    // 7. RAG Ingestion
-    const fs = require('fs');
-    if (fs.existsSync('./datasets/kcc.csv')) {
-        console.log('🤖 Seeding RAG Datasets (Grounding Agri AI)...')
-        const ragService = new RagService(prisma as any)
-        try {
-            await ragService.ingestCsv('./datasets/kcc.csv', 'cotton')
-            await ragService.ingestCsv('./datasets/sarthi.csv', 'rice')
-            console.log('✅ RAG Datasets ingested.')
-        } catch (err) {
-            console.error('⚠️ RAG Ingestion failed:', err)
-        }
-    } else {
-        console.warn('⚠️ Datasets not found at ./datasets/. Skipping RAG seed.')
-    }
+    // 7. RAG Ingestion (Manual CLI only in production)
+    console.log('🤖 Note: Agri Advisor data is now managed via manual CLI (scripts/ingest-all.py).')
 
     console.log('✨ Seeding finished successfully.')
 }
