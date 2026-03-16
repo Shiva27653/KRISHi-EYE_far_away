@@ -136,6 +136,10 @@ ALTER TABLE "tractors" DROP CONSTRAINT IF EXISTS "tractors_farm_id_fkey";
 
 -- DropIndex
 DROP INDEX IF EXISTS "agri_docs_fts_idx";
+DROP INDEX IF EXISTS "analytics_snapshots_farm_id_period_start_idx";
+DROP INDEX IF EXISTS "farmer_profiles_user_id_key";
+DROP INDEX IF EXISTS "knowledge_chunks_embedding_idx";
+DROP INDEX IF EXISTS "telemetry_points_recorded_at_job_id_idx";
 
 -- AlterTable
 ALTER TABLE "advisory_logs" DROP CONSTRAINT IF EXISTS "advisory_logs_pkey",
@@ -299,16 +303,16 @@ ADD COLUMN     "id" UUID NOT NULL,
 ADD CONSTRAINT "users_pkey" PRIMARY KEY ("id");
 
 -- CreateIndex
-CREATE INDEX "analytics_snapshots_farm_id_period_start_idx" ON "analytics_snapshots"("farm_id", "period_start");
+CREATE INDEX IF NOT EXISTS "analytics_snapshots_farm_id_period_start_idx" ON "analytics_snapshots"("farm_id", "period_start");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "farmer_profiles_user_id_key" ON "farmer_profiles"("user_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "farmer_profiles_user_id_key" ON "farmer_profiles"("user_id");
 
 -- CreateIndex
-CREATE INDEX "knowledge_chunks_embedding_idx" ON "knowledge_chunks"("embedding");
+CREATE INDEX IF NOT EXISTS "knowledge_chunks_embedding_idx" ON "knowledge_chunks"("embedding");
 
 -- CreateIndex
-CREATE INDEX "telemetry_points_recorded_at_job_id_idx" ON "telemetry_points"("recorded_at", "job_id");
+CREATE INDEX IF NOT EXISTS "telemetry_points_recorded_at_job_id_idx" ON "telemetry_points"("recorded_at", "job_id");
 
 -- AddForeignKey
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
