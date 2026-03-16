@@ -1,182 +1,171 @@
-datasource db {
-  provider   = "postgresql"
-  url        = env("DATABASE_URL")
-  extensions = [postgis(version: "3.3"), vector]
-}
-
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["postgresqlExtensions"]
   binaryTargets   = ["native", "linux-musl-openssl-3.0.x"]
 }
 
-model User {
-  id                 String    @id @default(uuid())
-  phone              String    @unique @db.VarChar(20)
-  name               String?
-  role               String
-  preferredLanguage  String    @default("en") @map("preferred_language")
-  email              String?
-  isActive           Boolean   @default(true) @map("is_active")
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [postgis(version: "3.6.2"), vector]
+}
 
-  sessions           Session[]
-  farmerProfile      FarmerProfile?
-  farms              Farm[]    @relation("FarmOwner")
-  farmMembers        FarmMember[]
-  supportTickets     SupportTicket[] @relation("TicketCreator")
-  assignedTickets    SupportTicket[] @relation("TicketAssignee")
-  advisoryLogs       AdvisoryLog[]
-  auditLogs          AuditLog[]
-  consentRecords     ConsentRecord[]
+model User {
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  phone             String          @unique @db.VarChar(20)
+  name              String?
+  role              String
+  preferredLanguage String          @default("en") @map("preferred_language")
+  email             String?
+  isActive          Boolean         @default(true) @map("is_active")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+  advisoryLogs      AdvisoryLog[]
+  consentRecords    ConsentRecord[]
+  farmMembers       FarmMember[]
+  farmerProfile     FarmerProfile?
+  farms             Farm[]          @relation("FarmOwner")
+  sessions          Session[]
+  supportTickets    SupportTicket[] @relation("TicketCreator")
 
   @@map("users")
 }
 
 model Session {
-  id                String    @id @default(uuid())
-  userId            String    @map("user_id")
-  refreshTokenHash  String    @map("refresh_token_hash")
-  deviceLabel       String?   @map("device_label")
-  ipAddress         String?   @map("ip_address")
-  userAgent         String?   @map("user_agent")
-  expiresAt         DateTime  @map("expires_at")
-  createdAt         DateTime  @default(now()) @map("created_at")
-  revokedAt         DateTime? @map("revoked_at")
-
-  user              User      @relation(fields: [userId], references: [id])
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  refreshTokenHash String    @map("refresh_token_hash")
+  deviceLabel      String?   @map("device_label")
+  ipAddress        String?   @map("ip_address")
+  userAgent        String?   @map("user_agent")
+  expiresAt        DateTime  @map("expires_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  revokedAt        DateTime? @map("revoked_at")
+  user             User      @relation(fields: [userId], references: [id])
 
   @@map("sessions")
 }
 
 model FarmerProfile {
-  id                 String    @id @default(uuid())
-  userId             String    @unique @map("user_id")
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId             String   @unique @map("user_id") @db.Uuid
   village            String?
   taluka             String?
   district           String?
   state              String?
-  primaryCrop        String?   @map("primary_crop")
-  farmSizeAcres      Decimal?  @map("farm_size_acres") @db.Decimal(10,2)
-  literacyPreference String?   @map("literacy_preference")
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
-
-  user               User      @relation(fields: [userId], references: [id])
+  primaryCrop        String?  @map("primary_crop")
+  farmSizeAcres      Decimal? @map("farm_size_acres") @db.Decimal(10, 2)
+  literacyPreference String?  @map("literacy_preference")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  user               User     @relation(fields: [userId], references: [id])
 
   @@map("farmer_profiles")
 }
 
 model Farm {
-  id                 String    @id @default(uuid())
-  ownerUserId        String    @map("owner_user_id")
-  name               String
-  district           String
-  state              String
-  centroid           Unsupported("geometry(Point, 4326)")?
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
-  
-  owner              User      @relation("FarmOwner", fields: [ownerUserId], references: [id])
-  members            FarmMember[]
-  fields             Field[]
-  tractors           Tractor[]
-  analytics          AnalyticsSnapshot[]
-  supportTickets     SupportTicket[]
-  advisoryLogs       AdvisoryLog[]
+  id             String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerUserId    String                    @map("owner_user_id") @db.Uuid
+  name           String
+  district       String
+  state          String
+  centroid       Unsupported("geography")?
+  createdAt      DateTime                  @default(now()) @map("created_at")
+  updatedAt      DateTime                  @updatedAt @map("updated_at")
+  advisoryLogs   AdvisoryLog[]
+  analytics      AnalyticsSnapshot[]
+  members        FarmMember[]
+  owner          User                      @relation("FarmOwner", fields: [ownerUserId], references: [id])
+  fields         Field[]
+  supportTickets SupportTicket[]
+  tractors       Tractor[]
 
   @@index([centroid], type: Gist)
   @@map("farms")
 }
 
 model FarmMember {
-  id                 String    @id @default(uuid())
-  farmId             String    @map("farm_id")
-  userId             String    @map("user_id")
-  role               String
-  createdAt          DateTime  @default(now()) @map("created_at")
-
-  farm               Farm      @relation(fields: [farmId], references: [id])
-  user               User      @relation(fields: [userId], references: [id])
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farmId    String   @map("farm_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  role      String
+  createdAt DateTime @default(now()) @map("created_at")
+  farm      Farm     @relation(fields: [farmId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@map("farm_members")
 }
 
 model Field {
-  id                 String    @id @default(uuid())
-  farmId             String    @map("farm_id")
-  name               String
-  crop               String?
-  season             String?
-  areaAcres          Decimal?  @map("area_acres") @db.Decimal(10,2)
-  boundary           Unsupported("geometry(Polygon, 4326)")?
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
-
-  farm               Farm      @relation(fields: [farmId], references: [id])
-  jobs               OperationJob[]
-  supportTickets     SupportTicket[]
+  id             String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farmId         String                    @map("farm_id") @db.Uuid
+  name           String
+  crop           String?
+  season         String?
+  areaAcres      Decimal?                  @map("area_acres") @db.Decimal(10, 2)
+  boundary       Unsupported("geography")?
+  createdAt      DateTime                  @default(now()) @map("created_at")
+  updatedAt      DateTime                  @updatedAt @map("updated_at")
+  farm           Farm                      @relation(fields: [farmId], references: [id])
+  jobs           OperationJob[]
+  supportTickets SupportTicket[]
 
   @@index([boundary], type: Gist)
   @@map("fields")
 }
 
 model Tractor {
-  id                 String    @id @default(uuid())
-  farmId             String    @map("farm_id")
-  label              String
-  description        String?
-  colorHex           String?   @map("color_hex")
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
-
-  farm               Farm      @relation(fields: [farmId], references: [id])
-  jobs               OperationJob[]
-  telemetryPoints    TelemetryPoint[]
-  supportTickets     SupportTicket[]
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farmId          String           @map("farm_id") @db.Uuid
+  label           String
+  description     String?
+  colorHex        String?          @map("color_hex")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  jobs            OperationJob[]
+  supportTickets  SupportTicket[]
+  telemetryPoints TelemetryPoint[]
+  farm            Farm             @relation(fields: [farmId], references: [id])
 
   @@map("tractors")
 }
 
 model OperationJob {
-  id                 String    @id @default(uuid())
-  tractorId          String    @map("tractor_id")
-  fieldId            String    @map("field_id")
+  id                 String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tractorId          String           @map("tractor_id") @db.Uuid
+  fieldId            String           @map("field_id") @db.Uuid
   status             String
-  startedAt          DateTime? @map("started_at")
-  endedAt            DateTime? @map("ended_at")
-  avgSpeedKmph       Decimal?  @map("avg_speed_kmph") @db.Decimal(8,2)
-  totalDistanceM     Decimal?  @map("total_distance_m") @db.Decimal(12,2)
-  coverageSummary    Json?     @map("coverage_summary")
-  improvementSummary Json?     @map("improvement_summary")
-  sourceType         String    @default("manual_or_demo") @map("source_type")
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
-
-  tractor            Tractor   @relation(fields: [tractorId], references: [id])
-  field              Field     @relation(fields: [fieldId], references: [id])
-  telemetryPoints    TelemetryPoint[]
+  startedAt          DateTime?        @map("started_at")
+  endedAt            DateTime?        @map("ended_at")
+  avgSpeedKmph       Decimal?         @map("avg_speed_kmph") @db.Decimal(8, 2)
+  totalDistanceM     Decimal?         @map("total_distance_m") @db.Decimal(12, 2)
+  coverageSummary    Json?            @map("coverage_summary")
+  improvementSummary Json?            @map("improvement_summary")
+  sourceType         String           @default("manual_or_demo") @map("source_type")
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+  field              Field            @relation(fields: [fieldId], references: [id])
+  tractor            Tractor          @relation(fields: [tractorId], references: [id])
   supportTickets     SupportTicket[]
+  telemetryPoints    TelemetryPoint[]
 
   @@map("operation_jobs")
 }
 
 model TelemetryPoint {
-  id                 BigInt    @id @default(autoincrement())
-  tractorId          String    @map("tractor_id")
-  jobId              String    @map("job_id")
-  recordedAt         DateTime  @map("recorded_at")
-  location           Unsupported("geometry(Point, 4326)")
-  speedKmph          Decimal?  @map("speed_kmph") @db.Decimal(8,2)
-  headingDeg         Decimal?  @map("heading_deg") @db.Decimal(8,2)
-  infectionIntensity Decimal?  @map("infection_intensity") @db.Decimal(8,2)
-  heatWeight         Decimal?  @map("heat_weight") @db.Decimal(8,2)
-  progressPercent    Decimal?  @map("progress_percent") @db.Decimal(5,2)
+  id                 BigInt                   @id @default(autoincrement())
+  tractorId          String                   @map("tractor_id") @db.Uuid
+  jobId              String                   @map("job_id") @db.Uuid
+  recordedAt         DateTime                 @map("recorded_at")
+  location           Unsupported("geography")
+  speedKmph          Decimal?                 @map("speed_kmph") @db.Decimal(8, 2)
+  headingDeg         Decimal?                 @map("heading_deg") @db.Decimal(8, 2)
+  infectionIntensity Decimal?                 @map("infection_intensity") @db.Decimal(8, 2)
+  heatWeight         Decimal?                 @map("heat_weight") @db.Decimal(8, 2)
+  progressPercent    Decimal?                 @map("progress_percent") @db.Decimal(5, 2)
   extra              Json?
-
-  tractor            Tractor   @relation(fields: [tractorId], references: [id])
-  job                OperationJob @relation(fields: [jobId], references: [id])
+  job                OperationJob             @relation(fields: [jobId], references: [id])
+  tractor            Tractor                  @relation(fields: [tractorId], references: [id])
 
   @@index([location], type: Gist)
   @@index([recordedAt, jobId])
@@ -184,165 +173,156 @@ model TelemetryPoint {
 }
 
 model AnalyticsSnapshot {
-  id                 String    @id @default(uuid())
-  farmId             String    @map("farm_id")
-  periodLabel        String    @map("period_label")
-  periodStart        DateTime? @map("period_start")
-  periodEnd          DateTime? @map("period_end")
-  metrics            Json
-  createdAt          DateTime  @default(now()) @map("created_at")
-
-  farm               Farm      @relation(fields: [farmId], references: [id])
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farmId      String    @map("farm_id") @db.Uuid
+  periodLabel String    @map("period_label")
+  periodStart DateTime? @map("period_start")
+  periodEnd   DateTime? @map("period_end")
+  metrics     Json
+  createdAt   DateTime  @default(now()) @map("created_at")
+  farm        Farm      @relation(fields: [farmId], references: [id])
 
   @@index([farmId, periodStart])
   @@map("analytics_snapshots")
 }
 
 model SupportOrganization {
-  id                 String    @id @default(uuid())
-  name               String
-  category           String
-  website            String?
-  isVerified         Boolean   @default(false) @map("is_verified")
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
-
-  contacts           SupportContact[]
+  id         String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String
+  category   String
+  website    String?
+  isVerified Boolean          @default(false) @map("is_verified")
+  createdAt  DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
+  contacts   SupportContact[]
 
   @@map("support_organizations")
 }
 
 model SupportContact {
-  id                 String    @id @default(uuid())
-  organizationId     String    @map("organization_id")
-  state              String?
-  district           String?
-  contactName        String?   @map("contact_name")
-  phone              String?
-  tollFree           Boolean   @default(false) @map("toll_free")
-  issueTypes         String[]  @map("issue_types")
-  sourceUrl          String?   @map("source_url")
-  verifiedAt         DateTime? @map("verified_at")
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
-
-  organization       SupportOrganization @relation(fields: [organizationId], references: [id])
+  id             String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String              @map("organization_id") @db.Uuid
+  state          String?
+  district       String?
+  contactName    String?             @map("contact_name")
+  phone          String?
+  tollFree       Boolean             @default(false) @map("toll_free")
+  issueTypes     String[]            @map("issue_types")
+  sourceUrl      String?             @map("source_url")
+  verifiedAt     DateTime?           @map("verified_at")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+  organization   SupportOrganization @relation(fields: [organizationId], references: [id])
 
   @@index([state, district])
   @@map("support_contacts")
 }
 
 model SupportTicket {
-  id                 String    @id @default(uuid())
-  userId             String    @map("user_id")
-  farmId             String?   @map("farm_id")
-  title              String?
-  category           String
-  priority           String    @default("medium")
-  status             String    @default("open")
-  description        String
-  fieldId            String?   @map("field_id")
-  tractorId          String?   @map("tractor_id")
-  jobId              String?   @map("job_id")
-  resolutionSummary  String?   @map("resolution_summary")
-  metadata           Json?
-  assignedToUserId   String?   @map("assigned_to_user_id")
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
-
-  creator            User      @relation("TicketCreator", fields: [userId], references: [id])
-  assignee           User?     @relation("TicketAssignee", fields: [assignedToUserId], references: [id])
-  farm               Farm?     @relation(fields: [farmId], references: [id])
-  field              Field?    @relation(fields: [fieldId], references: [id])
-  tractor            Tractor?  @relation(fields: [tractorId], references: [id])
-  job                OperationJob? @relation(fields: [jobId], references: [id])
+  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            String        @map("user_id") @db.Uuid
+  farmId            String?       @map("farm_id") @db.Uuid
+  category          String?
+  description       String?
+  status            String
+  priority          String?
+  assignedToUserId  String?       @map("assigned_to_user_id") @db.Uuid
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+  title             String?
+  fieldId           String?       @map("field_id") @db.Uuid
+  tractorId         String?       @map("tractor_id") @db.Uuid
+  jobId             String?       @map("job_id") @db.Uuid
+  resolutionSummary String?       @map("resolution_summary")
+  metadata          Json?
+  farm              Farm?         @relation(fields: [farmId], references: [id])
+  field             Field?        @relation(fields: [fieldId], references: [id])
+  job               OperationJob? @relation(fields: [jobId], references: [id])
+  tractor           Tractor?      @relation(fields: [tractorId], references: [id])
+  creator           User          @relation("TicketCreator", fields: [userId], references: [id])
 
   @@map("support_tickets")
 }
 
 model KnowledgeSource {
-  id                 String    @id @default(uuid())
-  title              String
-  sourceType         String    @map("source_type")
-  sourceUrl          String?   @map("source_url")
-  language           String    @default("en")
-  regionState        String?   @map("region_state")
-  regionDistrict     String?   @map("region_district")
-  crop               String?
-  publishedAt        DateTime? @map("published_at")
-  updatedAt          DateTime? @map("updated_at")
-  checksum           String?
-  status             String    @default("active")
-  createdAt          DateTime  @default(now()) @map("created_at")
-
-  chunks             KnowledgeChunk[]
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title          String
+  sourceType     String           @map("source_type")
+  sourceUrl      String?          @map("source_url")
+  language       String           @default("en")
+  regionState    String?          @map("region_state")
+  regionDistrict String?          @map("region_district")
+  crop           String?
+  publishedAt    DateTime?        @map("published_at")
+  updatedAt      DateTime?        @map("updated_at")
+  checksum       String?
+  status         String?          @default("active")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  chunks         KnowledgeChunk[]
 
   @@map("knowledge_sources")
 }
 
 model KnowledgeChunk {
-  id                 String    @id @default(uuid())
-  sourceId           String    @map("source_id")
-  chunkText          String    @map("chunk_text")
-  embedding          Unsupported("vector(1536)")?
-  metadata           Json?
-  createdAt          DateTime  @default(now()) @map("created_at")
+  id        String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sourceId  String                 @map("source_id") @db.Uuid
+  chunkText String                 @map("chunk_text")
+  embedding Unsupported("vector")?
+  metadata  Json?
+  createdAt DateTime               @default(now()) @map("created_at")
+  source    KnowledgeSource        @relation(fields: [sourceId], references: [id])
 
-  source             KnowledgeSource @relation(fields: [sourceId], references: [id])
-
+  @@index([embedding])
   @@map("knowledge_chunks")
 }
 
 model AdvisoryLog {
-  id                 String    @id @default(uuid())
-  userId             String    @map("user_id")
-  farmId             String?   @map("farm_id")
-  question           String
-  answer             String?
-  language           String?
-  confidence         Decimal?  @db.Decimal(5,4)
-  sourceIds          String[]  @map("source_ids")
-  rating             String?
-  feedback           String?
-  escalated          Boolean   @default(false)
-  expiresAt          DateTime  @map("expires_at")
-  createdAt          DateTime  @default(now()) @map("created_at")
-
-  user               User      @relation(fields: [userId], references: [id])
-  farm               Farm?     @relation(fields: [farmId], references: [id])
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  farmId     String?  @map("farm_id") @db.Uuid
+  question   String
+  answer     String?
+  language   String?
+  confidence Decimal? @db.Decimal(5, 4)
+  sourceIds  String[] @map("source_ids")
+  escalated  Boolean  @default(false)
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  rating     String?
+  feedback   String?
+  farm       Farm?    @relation(fields: [farmId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
 
   @@map("advisory_logs")
 }
 
 model AuditLog {
-  id                 String    @id @default(uuid())
-  actorUserId        String?   @map("actor_user_id")
-  entityType         String    @map("entity_type")
-  entityId           String    @map("entity_id")
-  action             String
-  metadata           Json?
-  ipAddress          String?   @map("ip_address")
-  createdAt          DateTime  @default(now()) @map("created_at")
-
-  actorUser          User?     @relation(fields: [actorUserId], references: [id])
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorUserId String?  @map("actor_user_id") @db.Uuid
+  entityType  String   @map("entity_type")
+  entityId    String   @map("entity_id")
+  action      String
+  metadata    Json?
+  ipAddress   String?  @map("ip_address")
+  createdAt   DateTime @default(now()) @map("created_at")
 
   @@index([entityType, entityId, createdAt])
   @@map("audit_logs")
 }
 
 model ConsentRecord {
-  id                 String    @id @default(uuid())
-  userId             String    @map("user_id")
-  consentType        String    @map("consent_type")
-  accepted           Boolean
-  version            String
-  createdAt          DateTime  @default(now()) @map("created_at")
-
-  user               User      @relation(fields: [userId], references: [id])
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  consentType String   @map("consent_type")
+  accepted    Boolean
+  version     String
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        User     @relation(fields: [userId], references: [id])
 
   @@map("consent_records")
 }
 
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model AgriDoc {
   id             String   @id @default(uuid())
   title          String?
