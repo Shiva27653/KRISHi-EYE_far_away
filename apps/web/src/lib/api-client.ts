@@ -60,5 +60,18 @@ export async function apiRequest<T>(
         return {} as T;
     }
 
-    return response.json();
+    const data = await response.json();
+
+    // Attach PWA metadata if present (for Phase 2 indicators)
+    if (typeof data === 'object' && data !== null) {
+        const cacheHeader = response.headers.get('X-PWA-Cache');
+        if (cacheHeader) {
+            data._pwa = {
+                cache: cacheHeader,
+                cachedAt: response.headers.get('X-PWA-Cached-At')
+            };
+        }
+    }
+
+    return data;
 }

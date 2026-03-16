@@ -5,6 +5,7 @@ import { TrendChart } from '@/components/charts/trend-chart'
 import { MetricCard } from '@/components/charts/metric-card'
 import { apiRequest } from '@/lib/api-client'
 import { Droplet, Leaf, Sprout, TrendingDown } from 'lucide-react'
+import { PushSettings } from '@/components/pwa/PushSettings'
 
 interface AnalyticsDetail {
     chemicalSavings: number;
@@ -85,12 +86,17 @@ export default function AnalyticsPage() {
                 />
             </div>
 
-            <div className="grid gap-6 grid-cols-1">
-                <TrendChart
-                    title="Spraying Optimization (By Zone)"
-                    description="Showing variable rate application effectiveness across your active fields."
-                    data={data?.trendData || []}
-                />
+            <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
+                <div className="lg:col-span-2">
+                    <TrendChart
+                        title="Spraying Optimization (By Zone)"
+                        description="Showing variable rate application effectiveness across your active fields."
+                        data={data?.trendData || []}
+                    />
+                </div>
+                <div className="flex flex-col gap-6">
+                    <PushSettings />
+                </div>
             </div>
         </div>
     )

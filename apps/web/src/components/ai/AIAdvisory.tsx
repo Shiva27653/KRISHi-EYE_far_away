@@ -15,6 +15,10 @@ interface Message {
   content: string;
   timestamp: string;
   sources?: Source[];
+  pwa?: {
+    cache: string;
+    cachedAt?: string;
+  };
 }
 
 export function AIAdvisory() {
@@ -59,7 +63,8 @@ export function AIAdvisory() {
         role: 'ai',
         content: res.answer,
         timestamp: new Date().toISOString(),
-        sources: res.sources
+        sources: res.sources,
+        pwa: res._pwa
       }])
     } catch (err) {
       console.error('RAG Query failed:', err)
@@ -129,7 +134,15 @@ export function AIAdvisory() {
                 ? 'bg-green-600 text-white rounded-br-none' 
                 : 'bg-white/5 border border-white/10 text-foreground rounded-bl-none'
             }`}>
-              <p className="text-[15px] leading-relaxed">{msg.content}</p>
+              <div className="flex flex-col gap-1">
+                {msg.pwa?.cache === 'HIT' && (
+                  <div className="flex items-center gap-1.5 mb-1 text-[9px] font-bold text-emerald-500 uppercase tracking-tighter bg-emerald-500/10 w-fit px-1.5 py-0.5 rounded border border-emerald-500/20">
+                    <RefreshCw className="w-2.5 h-2.5 animate-spin-slow" />
+                    <span>Cached Results {msg.pwa.cachedAt ? `• ${new Date(msg.pwa.cachedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}</span>
+                  </div>
+                )}
+                <p className="text-[15px] leading-relaxed">{msg.content}</p>
+              </div>
               
               {msg.sources && msg.sources.length > 0 && (
                 <div className="mt-4 pt-3 border-t border-white/10 space-y-2">
