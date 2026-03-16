@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException, BadRequestException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { Response } from 'express';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { PrismaService } from '../database/prisma.service';
@@ -59,12 +60,21 @@ export class AuthService {
     this.logger.log(`Created OTP ${otp} for phone ${phone}`);
   }
 
-  async verifyOtp(phoneInput: string, otp: string, ip: string, userAgent: string) {
+  async verifyOtp(phoneInput: string, otp: string, ip: string, userAgent: string, res: Response) {
+    let responded = false;
     const phone = this.normalizePhone(phoneInput);
     const record = this.otps[phone];
 
+    const sendResponse = (status: number, body: any) => {
+      if (!responded) {
+        responded = true;
+        return res.status(status).json(body);
+      }
+      this.logger.warn(`Duplicate response attempted for phone ${phone}. Blocked by guard.`);
+    };
+
     if (!record) {
-      throw new UnauthorizedException('No OTP requested or OTP expired.');
+      return sendResponse(401, { error: 'No OTP requested or OTP expired.' });
     }
 
     // S-01: Grace window for duplicate mobile hits
@@ -72,52 +82,67 @@ export class AuthService {
         const diff = new Date().getTime() - record.verifiedAt.getTime();
         if (diff < 10000) { // 10 second window
             this.logger.debug(`Grace window hit for phone ${phone}. Returning previous tokens.`);
-            return record.lastTokens;
+            return sendResponse(200, { ...record.lastTokens, message: 'Login successful (cached)' });
         }
     }
 
     if (record.expiresAt < new Date()) {
       delete this.otps[phone];
-      throw new UnauthorizedException('OTP expired.');
+      return sendResponse(401, { error: 'OTP expired.' });
     }
 
     if (record.otp !== otp) {
       record.attempts++;
       if (record.attempts >= 5) {
         delete this.otps[phone];
-        throw new UnauthorizedException('Too many failed attempts. OTP invalidated.');
+        return sendResponse(401, { error: 'Too many failed attempts. OTP invalidated.' });
       }
-      throw new UnauthorizedException('Invalid OTP.');
+      return sendResponse(401, { error: 'Invalid OTP.' });
     }
 
-    // Step 1: Get or Create User via Prisma
-    let user = await this.prisma.user.findUnique({ where: { phone } });
-    if (!user) {
-      user = await this.prisma.user.create({
-        data: {
-          phone,
-          role: 'farmer',
-        }
+    try {
+      // Step 1: Get or Create User via Prisma
+      let user = await this.prisma.user.findUnique({ where: { phone } });
+      if (!user) {
+        user = await this.prisma.user.create({
+          data: {
+            phone,
+            role: 'farmer',
+          }
+        });
+      }
+
+      const tokens = await this.generateTokens(user.id, ip, userAgent);
+
+      // Step 2: Mark as verified for the grace window instead of immediate deletion
+      record.verifiedAt = new Date();
+      record.lastTokens = tokens;
+      
+      // Cookie Security Options
+      const isProd = process.env.NODE_ENV === 'production';
+      const cookieOptions = {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: 'strict' as const,
+        path: '/'
+      };
+
+      res.cookie('krishi_auth_token', tokens.access_token, { ...cookieOptions, maxAge: 15 * 60 * 1000 }); // 15m
+      res.cookie('krishi_refresh_token', tokens.refresh_token, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 }); // 7d
+
+      return sendResponse(200, {
+        ...tokens,
+        user: {
+          id: user.id,
+          phone: user.phone,
+          role: user.role
+        },
+        message: 'Login successful'
       });
+    } catch (err) {
+      this.logger.error(`Database Error during OTP verify: ${err.message}`);
+      return sendResponse(500, { error: 'Internal server error during authentication' });
     }
-
-    const tokens = await this.generateTokens(user.id, ip, userAgent);
-
-    // Step 2: Mark as verified for the grace window instead of immediate deletion
-    record.verifiedAt = new Date();
-    record.lastTokens = tokens;
-    
-    // We don't delete immediately to allow for Lagoon/Mobile duplicate hits
-    // Cleanup happens in requestOtp or after 10s if we wanted a timer, but requestOtp is sufficient.
-
-    return {
-      ...tokens,
-      user: {
-        id: user.id,
-        phone: user.phone,
-        role: user.role
-      }
-    };
   }
 
   async refreshToken(refreshToken: string, ip: string, userAgent: string) {

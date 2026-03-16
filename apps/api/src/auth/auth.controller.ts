@@ -50,47 +50,9 @@ export class AuthController {
   @ApiOperation({ summary: 'Verify OTP and return auth tokens' })
   @ApiResponse({ status: 200, description: 'Tokens returned successfully.' })
   @ApiResponse({ status: 401, description: 'Invalid or expired OTP.' })
-  async verifyOtp(@Body() dto: VerifyOtpDto, @Ip() ip: string, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    try {
-      const userAgent = req.headers['user-agent'] || 'Unknown';
-      const tokens = await this.authService.verifyOtp(dto.phone, dto.otp, ip, userAgent);
-      
-      // Cookie Security Options
-      const isProd = process.env.NODE_ENV === 'production';
-      const cookieOptions = {
-        httpOnly: true,
-        secure: isProd,
-        // S-01: sameSite 'strict' as per production security specification
-        sameSite: 'strict' as const,
-        path: '/'
-      };
-
-      res.cookie('krishi_auth_token', tokens.access_token, { ...cookieOptions, maxAge: 15 * 60 * 1000 }); // 15m
-      res.cookie('krishi_refresh_token', tokens.refresh_token, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 }); // 7d
-
-      const safeTokens = tokens as any;
-      if ('user' in safeTokens && safeTokens.user) {
-        return {
-          user: {
-            id: safeTokens.user.id,
-            phone: safeTokens.user.phone,
-            role: safeTokens.user.role
-          },
-          message: 'Login successful'
-        };
-      }
-
-      return {
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        message: 'Login successful'
-      };
-    } catch (e: any) {
-      if (e instanceof UnauthorizedException) {
-        throw e;
-      }
-      return res.status(500).json({ error: 'Verify OTP failed', details: e.message || String(e) });
-    }
+  async verifyOtp(@Body() dto: VerifyOtpDto, @Ip() ip: string, @Req() req: Request, @Res() res: Response) {
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+    return await this.authService.verifyOtp(dto.phone, dto.otp, ip, userAgent, res);
   }
 
   @Post('refresh')
