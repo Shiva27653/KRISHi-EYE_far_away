@@ -18,6 +18,7 @@ services:
         fromStack:
           service: krishi-eye-ai
           property: url
+    healthCheckPath: /health
 
   - type: web
     name: krishi-eye-ai
@@ -36,6 +37,7 @@ services:
         sync: false
       - key: ALLOWED_ORIGINS
         value: "*"
+    healthCheckPath: /health
 
 databases:
   - name: krishi-eye-db
