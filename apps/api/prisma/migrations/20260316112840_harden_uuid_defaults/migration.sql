@@ -63,82 +63,82 @@
 
 */
 -- DropForeignKey
-ALTER TABLE "advisory_logs" DROP CONSTRAINT "advisory_logs_farm_id_fkey";
+ALTER TABLE "advisory_logs" DROP CONSTRAINT IF EXISTS IF EXISTS "advisory_logs_farm_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "advisory_logs" DROP CONSTRAINT "advisory_logs_user_id_fkey";
+ALTER TABLE "advisory_logs" DROP CONSTRAINT IF EXISTS IF EXISTS "advisory_logs_user_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "analytics_snapshots" DROP CONSTRAINT "analytics_snapshots_farm_id_fkey";
+ALTER TABLE "analytics_snapshots" DROP CONSTRAINT IF EXISTS IF EXISTS "analytics_snapshots_farm_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "audit_logs" DROP CONSTRAINT "audit_logs_actor_user_id_fkey";
+ALTER TABLE "audit_logs" DROP CONSTRAINT IF EXISTS IF EXISTS "audit_logs_actor_user_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "consent_records" DROP CONSTRAINT "consent_records_user_id_fkey";
+ALTER TABLE "consent_records" DROP CONSTRAINT IF EXISTS IF EXISTS "consent_records_user_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "farm_members" DROP CONSTRAINT "farm_members_farm_id_fkey";
+ALTER TABLE "farm_members" DROP CONSTRAINT IF EXISTS IF EXISTS "farm_members_farm_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "farm_members" DROP CONSTRAINT "farm_members_user_id_fkey";
+ALTER TABLE "farm_members" DROP CONSTRAINT IF EXISTS IF EXISTS "farm_members_user_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "farmer_profiles" DROP CONSTRAINT "farmer_profiles_user_id_fkey";
+ALTER TABLE "farmer_profiles" DROP CONSTRAINT IF EXISTS IF EXISTS "farmer_profiles_user_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "farms" DROP CONSTRAINT "farms_owner_user_id_fkey";
+ALTER TABLE "farms" DROP CONSTRAINT IF EXISTS IF EXISTS "farms_owner_user_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "fields" DROP CONSTRAINT "fields_farm_id_fkey";
+ALTER TABLE "fields" DROP CONSTRAINT IF EXISTS IF EXISTS "fields_farm_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "knowledge_chunks" DROP CONSTRAINT "knowledge_chunks_source_id_fkey";
+ALTER TABLE "knowledge_chunks" DROP CONSTRAINT IF EXISTS IF EXISTS "knowledge_chunks_source_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "operation_jobs" DROP CONSTRAINT "operation_jobs_field_id_fkey";
+ALTER TABLE "operation_jobs" DROP CONSTRAINT IF EXISTS IF EXISTS "operation_jobs_field_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "operation_jobs" DROP CONSTRAINT "operation_jobs_tractor_id_fkey";
+ALTER TABLE "operation_jobs" DROP CONSTRAINT IF EXISTS IF EXISTS "operation_jobs_tractor_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "sessions" DROP CONSTRAINT "sessions_user_id_fkey";
+ALTER TABLE "sessions" DROP CONSTRAINT IF EXISTS IF EXISTS "sessions_user_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "support_contacts" DROP CONSTRAINT "support_contacts_organization_id_fkey";
+ALTER TABLE "support_contacts" DROP CONSTRAINT IF EXISTS IF EXISTS "support_contacts_organization_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "support_tickets" DROP CONSTRAINT "support_tickets_assigned_to_user_id_fkey";
+ALTER TABLE "support_tickets" DROP CONSTRAINT IF EXISTS IF EXISTS "support_tickets_assigned_to_user_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "support_tickets" DROP CONSTRAINT "support_tickets_farm_id_fkey";
+ALTER TABLE "support_tickets" DROP CONSTRAINT IF EXISTS IF EXISTS "support_tickets_farm_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "support_tickets" DROP CONSTRAINT "support_tickets_field_id_fkey";
+ALTER TABLE "support_tickets" DROP CONSTRAINT IF EXISTS IF EXISTS "support_tickets_field_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "support_tickets" DROP CONSTRAINT "support_tickets_job_id_fkey";
+ALTER TABLE "support_tickets" DROP CONSTRAINT IF EXISTS IF EXISTS "support_tickets_job_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "support_tickets" DROP CONSTRAINT "support_tickets_tractor_id_fkey";
+ALTER TABLE "support_tickets" DROP CONSTRAINT IF EXISTS IF EXISTS "support_tickets_tractor_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "support_tickets" DROP CONSTRAINT "support_tickets_user_id_fkey";
+ALTER TABLE "support_tickets" DROP CONSTRAINT IF EXISTS IF EXISTS "support_tickets_user_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "telemetry_points" DROP CONSTRAINT "telemetry_points_job_id_fkey";
+ALTER TABLE "telemetry_points" DROP CONSTRAINT IF EXISTS IF EXISTS "telemetry_points_job_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "telemetry_points" DROP CONSTRAINT "telemetry_points_tractor_id_fkey";
+ALTER TABLE "telemetry_points" DROP CONSTRAINT IF EXISTS IF EXISTS "telemetry_points_tractor_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "tractors" DROP CONSTRAINT "tractors_farm_id_fkey";
+ALTER TABLE "tractors" DROP CONSTRAINT IF EXISTS IF EXISTS "tractors_farm_id_fkey";
 
 -- DropIndex
-DROP INDEX "agri_docs_fts_idx";
+DROP INDEX IF EXISTS IF EXISTS "agri_docs_fts_idx";
 
 -- AlterTable
-ALTER TABLE "advisory_logs" DROP CONSTRAINT "advisory_logs_pkey",
+ALTER TABLE "advisory_logs" DROP CONSTRAINT IF EXISTS "advisory_logs_pkey",
 DROP COLUMN "id",
 ADD COLUMN     "id" UUID NOT NULL,
 DROP COLUMN "user_id",
@@ -151,7 +151,7 @@ ADD CONSTRAINT "advisory_logs_pkey" PRIMARY KEY ("id");
 ALTER TABLE "agri_docs" DROP COLUMN "fts_doc";
 
 -- AlterTable
-ALTER TABLE "analytics_snapshots" DROP CONSTRAINT "analytics_snapshots_pkey",
+ALTER TABLE "analytics_snapshots" DROP CONSTRAINT IF EXISTS "analytics_snapshots_pkey",
 DROP COLUMN "id",
 ADD COLUMN     "id" UUID NOT NULL,
 DROP COLUMN "farm_id",
@@ -159,7 +159,7 @@ ADD COLUMN     "farm_id" UUID NOT NULL,
 ADD CONSTRAINT "analytics_snapshots_pkey" PRIMARY KEY ("id");
 
 -- AlterTable
-ALTER TABLE "audit_logs" DROP CONSTRAINT "audit_logs_pkey",
+ALTER TABLE "audit_logs" DROP CONSTRAINT IF EXISTS "audit_logs_pkey",
 DROP COLUMN "id",
 ADD COLUMN     "id" UUID NOT NULL,
 DROP COLUMN "actor_user_id",
@@ -167,7 +167,7 @@ ADD COLUMN     "actor_user_id" UUID,
 ADD CONSTRAINT "audit_logs_pkey" PRIMARY KEY ("id");
 
 -- AlterTable
-ALTER TABLE "consent_records" DROP CONSTRAINT "consent_records_pkey",
+ALTER TABLE "consent_records" DROP CONSTRAINT IF EXISTS "consent_records_pkey",
 DROP COLUMN "id",
 ADD COLUMN     "id" UUID NOT NULL,
 DROP COLUMN "user_id",
@@ -175,7 +175,7 @@ ADD COLUMN     "user_id" UUID NOT NULL,
 ADD CONSTRAINT "consent_records_pkey" PRIMARY KEY ("id");
 
 -- AlterTable
-ALTER TABLE "farm_members" DROP CONSTRAINT "farm_members_pkey",
+ALTER TABLE "farm_members" DROP CONSTRAINT IF EXISTS "farm_members_pkey",
 DROP COLUMN "id",
 ADD COLUMN     "id" UUID NOT NULL,
 DROP COLUMN "farm_id",
@@ -185,7 +185,7 @@ ADD COLUMN     "user_id" UUID NOT NULL,
 ADD CONSTRAINT "farm_members_pkey" PRIMARY KEY ("id");
 
 -- AlterTable
-ALTER TABLE "farmer_profiles" DROP CONSTRAINT "farmer_profiles_pkey",
+ALTER TABLE "farmer_profiles" DROP CONSTRAINT IF EXISTS "farmer_profiles_pkey",
 DROP COLUMN "id",
 ADD COLUMN     "id" UUID NOT NULL,
 DROP COLUMN "user_id",
@@ -193,7 +193,7 @@ ADD COLUMN     "user_id" UUID NOT NULL,
 ADD CONSTRAINT "farmer_profiles_pkey" PRIMARY KEY ("id");
 
 -- AlterTable
-ALTER TABLE "farms" DROP CONSTRAINT "farms_pkey",
+ALTER TABLE "farms" DROP CONSTRAINT IF EXISTS "farms_pkey",
 DROP COLUMN "id",
 ADD COLUMN     "id" UUID NOT NULL,
 DROP COLUMN "owner_user_id",
@@ -201,7 +201,7 @@ ADD COLUMN     "owner_user_id" UUID NOT NULL,
 ADD CONSTRAINT "farms_pkey" PRIMARY KEY ("id");
 
 -- AlterTable
-ALTER TABLE "fields" DROP CONSTRAINT "fields_pkey",
+ALTER TABLE "fields" DROP CONSTRAINT IF EXISTS "fields_pkey",
 DROP COLUMN "id",
 ADD COLUMN     "id" UUID NOT NULL,
 DROP COLUMN "farm_id",
@@ -209,7 +209,7 @@ ADD COLUMN     "farm_id" UUID NOT NULL,
 ADD CONSTRAINT "fields_pkey" PRIMARY KEY ("id");
 
 -- AlterTable
-ALTER TABLE "knowledge_chunks" DROP CONSTRAINT "knowledge_chunks_pkey",
+ALTER TABLE "knowledge_chunks" DROP CONSTRAINT IF EXISTS "knowledge_chunks_pkey",
 DROP COLUMN "id",
 ADD COLUMN     "id" UUID NOT NULL,
 DROP COLUMN "source_id",
@@ -217,14 +217,14 @@ ADD COLUMN     "source_id" UUID NOT NULL,
 ADD CONSTRAINT "knowledge_chunks_pkey" PRIMARY KEY ("id");
 
 -- AlterTable
-ALTER TABLE "knowledge_sources" DROP CONSTRAINT "knowledge_sources_pkey",
+ALTER TABLE "knowledge_sources" DROP CONSTRAINT IF EXISTS "knowledge_sources_pkey",
 DROP COLUMN "id",
 ADD COLUMN     "id" UUID NOT NULL,
 ALTER COLUMN "status" DROP NOT NULL,
 ADD CONSTRAINT "knowledge_sources_pkey" PRIMARY KEY ("id");
 
 -- AlterTable
-ALTER TABLE "operation_jobs" DROP CONSTRAINT "operation_jobs_pkey",
+ALTER TABLE "operation_jobs" DROP CONSTRAINT IF EXISTS "operation_jobs_pkey",
 DROP COLUMN "id",
 ADD COLUMN     "id" UUID NOT NULL,
 DROP COLUMN "tractor_id",
@@ -234,7 +234,7 @@ ADD COLUMN     "field_id" UUID NOT NULL,
 ADD CONSTRAINT "operation_jobs_pkey" PRIMARY KEY ("id");
 
 -- AlterTable
-ALTER TABLE "sessions" DROP CONSTRAINT "sessions_pkey",
+ALTER TABLE "sessions" DROP CONSTRAINT IF EXISTS "sessions_pkey",
 DROP COLUMN "id",
 ADD COLUMN     "id" UUID NOT NULL,
 DROP COLUMN "user_id",
@@ -242,7 +242,7 @@ ADD COLUMN     "user_id" UUID NOT NULL,
 ADD CONSTRAINT "sessions_pkey" PRIMARY KEY ("id");
 
 -- AlterTable
-ALTER TABLE "support_contacts" DROP CONSTRAINT "support_contacts_pkey",
+ALTER TABLE "support_contacts" DROP CONSTRAINT IF EXISTS "support_contacts_pkey",
 DROP COLUMN "id",
 ADD COLUMN     "id" UUID NOT NULL,
 DROP COLUMN "organization_id",
@@ -250,13 +250,13 @@ ADD COLUMN     "organization_id" UUID NOT NULL,
 ADD CONSTRAINT "support_contacts_pkey" PRIMARY KEY ("id");
 
 -- AlterTable
-ALTER TABLE "support_organizations" DROP CONSTRAINT "support_organizations_pkey",
+ALTER TABLE "support_organizations" DROP CONSTRAINT IF EXISTS "support_organizations_pkey",
 DROP COLUMN "id",
 ADD COLUMN     "id" UUID NOT NULL,
 ADD CONSTRAINT "support_organizations_pkey" PRIMARY KEY ("id");
 
 -- AlterTable
-ALTER TABLE "support_tickets" DROP CONSTRAINT "support_tickets_pkey",
+ALTER TABLE "support_tickets" DROP CONSTRAINT IF EXISTS "support_tickets_pkey",
 DROP COLUMN "id",
 ADD COLUMN     "id" UUID NOT NULL,
 DROP COLUMN "user_id",
@@ -285,7 +285,7 @@ DROP COLUMN "job_id",
 ADD COLUMN     "job_id" UUID NOT NULL;
 
 -- AlterTable
-ALTER TABLE "tractors" DROP CONSTRAINT "tractors_pkey",
+ALTER TABLE "tractors" DROP CONSTRAINT IF EXISTS "tractors_pkey",
 DROP COLUMN "id",
 ADD COLUMN     "id" UUID NOT NULL,
 DROP COLUMN "farm_id",
@@ -293,7 +293,7 @@ ADD COLUMN     "farm_id" UUID NOT NULL,
 ADD CONSTRAINT "tractors_pkey" PRIMARY KEY ("id");
 
 -- AlterTable
-ALTER TABLE "users" DROP CONSTRAINT "users_pkey",
+ALTER TABLE "users" DROP CONSTRAINT IF EXISTS "users_pkey",
 DROP COLUMN "id",
 ADD COLUMN     "id" UUID NOT NULL,
 ADD CONSTRAINT "users_pkey" PRIMARY KEY ("id");
