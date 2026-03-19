@@ -23,7 +23,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#10b981" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body className={`${inter.variable} font-sans antialiased overflow-hidden`}>
+      <body className={`${inter.variable} font-sans antialiased`}>
         <ThemeProvider>
           <AuthProvider>
             {children}
