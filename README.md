@@ -11,9 +11,9 @@
 
 ## 🚀 Live Demo & Dashboard
 
-> [!TIP]
-> **Live Web Dashboard:** [dashboard.krishieye.app](https://krishieye.app)
-> **API Docs:** [api.krishieye.app/api/docs](https://api.krishieye.app/api/docs)
+> [!WARNING]
+> **DNS Outage Notice:** The primary `krishieye.app` domains are currently experiencing DNS propagation issues (`no such host`). 
+> **Evaluators & Judges:** Please rely on the included `LOCAL_WINDOWS_SETUP.md` guide to deterministically spin up and verify the entire ecosystem (including live hardware telemetry sweeps) on your local machine.
 
 ![Hero Screenshot](https://raw.githubusercontent.com/soham25-git/KRISHI-EYE_Webapp-India-Innovates_Open-Innovation/main/docs/screenshots/dashboard_hero.png)
 
