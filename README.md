@@ -11,9 +11,12 @@
 
 ## 🚀 Live Demo & Dashboard
 
-> [!WARNING]
-> **DNS Outage Notice:** The primary `krishieye.app` domains are currently experiencing DNS propagation issues (`no such host`). 
-> **Evaluators & Judges:** Please rely on the included **[Local Evaluator Bootstrap](docs/DEPLOYMENT.md#local-evaluator-bootstrap-when-live-domains-fail)** guide in `docs/DEPLOYMENT.md` to deterministically spin up and verify the entire ecosystem (including live hardware telemetry sweeps) on your local machine.
+> [!TIP]
+> **Live Web Dashboard:** [krishi-eye.vercel.app](https://krishi-eye-webapp-india-innovates-o.vercel.app/)
+> **API Docs:** [krishi-eye-api.onrender.com/api/docs](https://krishi-eye-api.onrender.com/api/docs)
+
+> [!NOTE]
+> The primary `.app` custom domain is currently undergoing DNS migration. Please use the verified Vercel/Render links above for immediate evaluation.
 
 ![Hero Screenshot](https://raw.githubusercontent.com/soham25-git/KRISHI-EYE_Webapp-India-Innovates_Open-Innovation/main/docs/screenshots/dashboard_hero.png)
 

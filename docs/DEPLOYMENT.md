@@ -67,8 +67,8 @@ npx prisma migrate deploy
 
 ---
 
-## 🛑 Local Evaluator Bootstrap (When Live Domains Fail)
-If the public `krishieye.app` domains are suffering DNS outages, evaluators can natively spin up the exact production architecture on their local machine.
+## 🛠️ Secondary Verification: Local Bootstrap (Fallback)
+If the primary cloud domains are unreachable due to DNS propagation, evaluators can natively spin up the exact production architecture on their local machine.
 
 Because KRISHi-EYE relies on advanced spatial geometry calculations (`Unsupported("geography")` WKT POINTS), **Docker Desktop is strictly required for local testing**. 
 
