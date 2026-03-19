@@ -13,7 +13,7 @@
 
 > [!WARNING]
 > **DNS Outage Notice:** The primary `krishieye.app` domains are currently experiencing DNS propagation issues (`no such host`). 
-> **Evaluators & Judges:** Please rely on the included `LOCAL_WINDOWS_SETUP.md` guide to deterministically spin up and verify the entire ecosystem (including live hardware telemetry sweeps) on your local machine.
+> **Evaluators & Judges:** Please rely on the included **[Local Evaluator Bootstrap](docs/DEPLOYMENT.md#local-evaluator-bootstrap-when-live-domains-fail)** guide in `docs/DEPLOYMENT.md` to deterministically spin up and verify the entire ecosystem (including live hardware telemetry sweeps) on your local machine.
 
 ![Hero Screenshot](https://raw.githubusercontent.com/soham25-git/KRISHI-EYE_Webapp-India-Innovates_Open-Innovation/main/docs/screenshots/dashboard_hero.png)
 
