@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         const userData = await apiRequest<User>('/v1/auth/sessions');
         setUser(userData);
-        router.push('/');
+        router.push('/dashboard');
     };
 
     const logout = async () => {

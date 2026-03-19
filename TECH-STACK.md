@@ -1,40 +1,28 @@
-# 🛠️ Technology Stack
-
-## Mobile App (`apps/mobile`)
-- Expo 55 (React Native 0.83)
-- Tab-based navigation (Home, Map, Ask, Help, Profile)
-- Offline-first local data layer
-- Dark theme with large touch targets
+# 🛠️ KRISHi-EYE Tech Stack
 
 ## Web Dashboard (`apps/web`)
-- Next.js 16 (App Router)
-- React 19
-- Tailwind CSS v4 + shadcn/ui
-- PWA-ready
-- Responsive layout (desktop + mobile viewport)
+- **Framework**: Next.js 16 (App Router) with React 19.
+- **Styling**: Tailwind CSS v4 + Vanilla CSS + Lucide Icons.
+- **PWA**: Custom `sw.js` (No Workbox) for lightweight execution.
+- **State/Hooks**: `usePush` for notifications, `apiRequest` for PWA-aware data fetching.
 
-## Backend API (`apps/api`)
-- NestJS v11 (modular architecture)
-- Prisma ORM v5 (PostgreSQL)
-- JWT authentication (HttpOnly secure cookies)
-- CORS + Helmet security headers
+## Backend Service (`apps/api`)
+- **Core**: NestJS v11 (Node.js).
+- **ORM**: Prisma v5 (PostgreSQL).
+- **Search**: PostgreSQL Full-Text Search (TSVector) for grounded RAG.
+- **Auth**: OTP-based authentication with response-guarded JWT.
 
-## AI Service (`apps/ai-service`)
-- FastAPI v0.110+ (async, high-throughput)
-- RAG pipeline with PGVector
-- Grounded advisory with source citations
-- Safety abstention boundary
+## AI & Data Pipeline
+- **FastAPI**: Lightweight service for Vision and RAG logic support.
+- **Ingestion**: Standalone Python CLI (`scripts/ingest-all.py`) for production data loads.
+- **Models**: YOLOv8n-seg for leaf segmentation (Production Vision Pipeline).
 
-## Computer Vision Models
-- YOLOv8n-seg — leaf segmentation
-- MobileNetV2 — infection classification
-- U-Net — lesion area segmentation
+## Infrastructure & Deployment
+- **API/AI Hosting**: Render.com (HTTP services with health check paths).
+- **Web Hosting**: Vercel (Production Next.js deployment).
+- **Database**: Managed PostgreSQL (with GIN indexes for FTS).
 
-## Deployment
-
-| Service | Platform | Root Dir | Typical Env Vars |
-|---------|----------|----------|------------------|
-| Mobile | Expo (EAS Build) | `apps/mobile` | `API_URL` |
-| Web | Vercel | `apps/web` | `NEXT_PUBLIC_API_URL` |
-| API | Render | `apps/api` | `DATABASE_URL`, `JWT_SECRET`, `NODE_ENV` |
-| AI | Render | `apps/ai-service` | `DATABASE_URL`, `LLM_API_KEY`, `ALLOWED_ORIGINS` |
+## Security & Reliability
+- **Response Guards**: Preventing double-send Crashes (`AllExceptionsFilter`).
+- **Network Safety**: Service Worker ignores all non-safe GET requests.
+- **Schema Hardening**: Database-independent UUID generation for better portability.

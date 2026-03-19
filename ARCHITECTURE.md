@@ -6,56 +6,68 @@
 graph LR
     subgraph Clients
         Mobile[Mobile App<br/>Expo 55]
-        Web[Web Dashboard<br/>Next.js 16]
+        Web[PWA Web Dashboard<br/>Next.js 16]
     end
     subgraph Backend
         API[NestJS 11 API]
-        AI[FastAPI RAG Service]
+        AI[FastAPI AI Service]
     end
-    subgraph AI Pipeline
-        CV[CV Pipeline<br/>YOLOv8n-seg + MobileNetV2 + U-Net]
-        KB[PGVector Knowledge Base]
+    subgraph Knowledge & Pipeline
+        CV[CV Pipeline<br/>YOLOv8n-seg + MobileNetV2]
+        FTS[PostgreSQL FTS<br/>Grounded knowledge base]
     end
     Mobile --> API
     Web --> API
     API --> AI
     AI --> CV
-    AI --> KB
+    API --> FTS
 ```
 
-## Request Flow
+## Request Flow (AI Advisory)
 
 ```mermaid
 sequenceDiagram
-    participant F as Farmer (Mobile/Web)
+    participant F as Farmer (Web PWA)
+    participant SW as Service Worker (SWR Cache)
     participant API as NestJS API
-    participant AI as FastAPI AI Service
-    participant CV as Vision Pipeline
-    participant KB as Knowledge Base
+    participant FTS as PG Full-Text Search
 
-    F->>+API: Upload crop image / Ask question
-    API->>+AI: Forward to AI service
-    AI->>CV: Run vision pipeline
-    CV-->>AI: Segmentation + classification results
-    AI->>KB: RAG retrieval for advisory
-    KB-->>AI: Relevant ICAR/KVK documents
-    AI-->>-API: Detection results + grounded advisory
-    API-->>-F: Heatmap + treatment plan + sources
+    F->>+SW: Ask agricultural question
+    SW->>KB: Check SWR Cache
+    KB-->>F: Immediate cached response (if available)
+    SW->>+API: Fetch fresh data (background)
+    API->>FTS: Tiered Retrieval (Strict -> AND -> Anchored OR)
+    FTS-->>API: Grounded snippets
+    API-->>-SW: Fresh grounded response
+    SW->>KB: Update SWR Cache
+    SW-->>-F: Fresh response + Citations
 ```
 
-## Computer Vision Pipeline
+## Security Architecture
 
-| Stage | Model | Input | Output |
-|-------|-------|-------|--------|
-| 1. Leaf Segmentation | YOLOv8n-seg | Field image | Individual leaf masks |
-| 2. Infection Classification | MobileNetV2 | Cropped leaf | Disease type + confidence |
-| 3. Lesion Segmentation | U-Net | Infected leaf | Precise lesion boundaries |
-| 4. Spray Planning | Heatmap algorithm | Detection map | 6-lane boom spray pattern |
+| Layer | Implementation |
+|-------|----------------|
+| **Transport** | SSL/TLS enforced on Render and Vercel. |
+| **Authentication** | JWT stored in **HttpOnly, Secure, SameSite=Strict** cookies. |
+| **Response Safety** | `headersSent` guard in `AllExceptionsFilter` to prevent socket crashes. |
+| **Headers** | `Helmet` integration for CSP, XSS protection, and HSTS. |
+| **Data Access** | Parameterized Raw SQL via `Prisma.sql` to prevent SQL injection. |
+| **PWA Security** | Network-only fallback for all Auth/POST requests in Service Worker. |
 
-## Advisory Pipeline
+## RAG & Knowledge Engine
 
-The AI service uses a RAG (Retrieval-Augmented Generation) architecture:
-- Verified agricultural knowledge from ICAR, KVK, and CIBRC sources
-- Vector similarity search via PGVector
-- Grounded responses with explicit source citations and confidence scores
-- Safety boundary: abstains and routes to local KVK when knowledge is insufficient
+The Advisory system has been refactored from legacy Vector search to a robust, tiered **Full-Text Search (FTS)** strategy:
+- **Tier 1 (Strict Websearch)**: Exact phrase matching.
+- **Tier 2 (Standard AND)**: All keywords must be present.
+- **Tier 3 (Anchored OR)**: Mandatory crop name + flexible descriptive terms.
+- **Ranking**: `ts_rank` with positional relevance for high-precision results.
+- **Data**: 50,000+ records from BhashaBench, SARTHI, and KCC datasets.
+
+## PWA Capabilities
+
+KRISHi-EYE is implemented as a full Phase 2 Progressive Web App:
+- **Phase 1 (Basic)**: Offline fallback, home-screen installation, and static asset caching.
+- **Phase 2 (Advanced)**: 
+  - **SWR Caching**: Instantly serve previous Advisor results while updating in background.
+  - **Push Notifications**: VAPID-based alerts for farm updates and new advisories.
+  - **Cache Awareness**: UI badges indicating "Cached Result" with staleness timestamps.

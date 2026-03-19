@@ -7,7 +7,7 @@ import { useAuth } from '@/components/auth/auth-provider'
 import { useTheme } from '@/components/theme/theme-provider'
 
 const navItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
+    { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
     { icon: Tent, label: 'My Farms', href: '/farms' },
     { href: '/tractors', label: 'Boom Sprayer Fleet', icon: Tractor },
     { href: '/jobs', label: 'Spraying Operations', icon: ClipboardList },
