@@ -15,11 +15,14 @@ export interface LiveTelemetryPayload {
     lat: number;
     lng: number;
     recordedAt: Date | string;
-    speedKmph: number;
-    headingDeg: number;
-    infectionIntensity: number;
-    heatWeight: number;
-    progressPercent: number;
+    speedKmph?: number;
+    headingDeg?: number;
+    infectionIntensity?: number;
+    heatWeight?: number;
+    gpsFixQuality?: number;
+    sprayActive?: boolean;
+    valveStates?: number[];
+    diseaseLabel?: string;
   };
   isDemo: boolean;
 }

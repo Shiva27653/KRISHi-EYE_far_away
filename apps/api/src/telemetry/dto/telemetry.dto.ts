@@ -8,10 +8,15 @@ export class PointDto {
     @IsNotEmpty()
     recordedAt: string;
 
-    @ApiProperty({ example: 'POINT(77.5946 12.9716)' })
-    @IsString()
+    @ApiProperty({ example: 12.9716 })
+    @IsNumber()
     @IsNotEmpty()
-    location: string;
+    latitude: number;
+
+    @ApiProperty({ example: 77.5946 })
+    @IsNumber()
+    @IsNotEmpty()
+    longitude: number;
 
     @ApiProperty({ example: 45.2, required: false })
     @IsNumber()
@@ -23,7 +28,27 @@ export class PointDto {
     @IsOptional()
     headingDeg?: number;
 
-    @ApiProperty({ example: 0.15, required: false })
+    @ApiProperty({ example: 4, required: false, description: '1=No fix, 2=2D, 3=3D, 4=DGPS, 5=PPK' })
+    @IsNumber()
+    @IsOptional()
+    gpsFixQuality?: number;
+    
+    @ApiProperty({ example: true, required: false })
+    @IsOptional()
+    sprayActive?: boolean;
+
+    @ApiProperty({ example: [1, 2], required: false })
+    @IsArray()
+    @IsNumber({}, { each: true })
+    @IsOptional()
+    valveStates?: number[];
+
+    @ApiProperty({ example: 'Rust', required: false })
+    @IsString()
+    @IsOptional()
+    diseaseLabel?: string;
+
+    @ApiProperty({ example: 0.85, required: false })
     @IsNumber()
     @IsOptional()
     infectionIntensity?: number;
@@ -32,11 +57,6 @@ export class PointDto {
     @IsNumber()
     @IsOptional()
     heatWeight?: number;
-
-    @ApiProperty({ example: 25.5, required: false })
-    @IsNumber()
-    @IsOptional()
-    progressPercent?: number;
 
     @ApiProperty({ required: false })
     @IsOptional()

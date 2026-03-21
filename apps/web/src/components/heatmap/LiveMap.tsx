@@ -5,6 +5,7 @@ import { TractorMarker } from '@/components/map/tractor-marker';
 import { FarmHeatmap } from '@/components/map/farm-heatmap';
 import { RouteTrail } from '@/components/map/route-trail';
 import { useTelemetry } from '@/hooks/useTelemetry';
+import { Satellite, Droplets, AlertTriangle } from 'lucide-react';
 
 interface LiveMapProps {
     jobId: string;
@@ -32,11 +33,11 @@ export const LiveMap: React.FC<LiveMapProps> = ({ jobId, tractorId, isLive }) =>
 
     // Format history for FarmHeatmap
     const heatmapData = useMemo(() => 
-        history.map(h => ({
+        history.filter(h => h.point.heatWeight !== undefined && h.point.infectionIntensity !== undefined).map(h => ({
             lat: h.point.lat,
             lng: h.point.lng,
-            weight: h.point.heatWeight,
-            intensity: h.point.infectionIntensity
+            weight: h.point.heatWeight!,
+            intensity: h.point.infectionIntensity!
         })),
     [history]);
 
@@ -67,6 +68,32 @@ export const LiveMap: React.FC<LiveMapProps> = ({ jobId, tractorId, isLive }) =>
                     rotation={currentPoint.headingDeg}
                 />
             )}
+
+            {/* Hardware Telemetry HUD */}
+            <div className="absolute top-4 right-4 flex flex-col gap-2 pointer-events-none">
+                {currentPoint?.sprayActive && (
+                    <div className="bg-emerald-500/90 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg backdrop-blur shadow-emerald-500/20">
+                        <Droplets className="w-3.5 h-3.5" />
+                        SPRAYING ACTIVE
+                    </div>
+                )}
+                
+                {currentPoint?.gpsFixQuality !== undefined && (
+                    <div className={`text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg backdrop-blur ${
+                        currentPoint.gpsFixQuality >= 4 
+                            ? 'bg-blue-500/90 text-white shadow-blue-500/20' 
+                            : currentPoint.gpsFixQuality === 3
+                            ? 'bg-yellow-500/90 text-white shadow-yellow-500/20'
+                            : 'bg-red-500/90 text-white shadow-red-500/20'
+                    }`}>
+                        {currentPoint.gpsFixQuality < 3 ? <AlertTriangle className="w-3.5 h-3.5" /> : <Satellite className="w-3.5 h-3.5" />}
+                        {currentPoint.gpsFixQuality >= 5 ? 'PPK FIXED' 
+                         : currentPoint.gpsFixQuality === 4 ? 'DGPS FLOAT' 
+                         : currentPoint.gpsFixQuality === 3 ? '3D FIX' 
+                         : 'NO FIX'}
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

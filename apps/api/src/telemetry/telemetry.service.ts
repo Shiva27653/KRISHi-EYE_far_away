@@ -41,34 +41,39 @@ export class TelemetryService {
       tractorId: dto.tractorId,
       jobId: dto.jobId,
       recordedAt: new Date(p.recordedAt),
-      location_wkt: p.location,
+      location_wkt: `POINT(${p.longitude} ${p.latitude})`,
+      latitude: p.latitude,
+      longitude: p.longitude,
       speedKmph: p.speedKmph,
       headingDeg: p.headingDeg,
       infectionIntensity: p.infectionIntensity,
       heatWeight: p.heatWeight,
-      progressPercent: p.progressPercent,
-      extra: p.extra ? JSON.stringify(p.extra) : undefined
+      gpsFixQuality: p.gpsFixQuality,
+      sprayActive: p.sprayActive,
+      valveStates: p.valveStates,
+      diseaseLabel: p.diseaseLabel,
+      extra: p.extra || {}
     }));
 
     // Broadcast the latest point to live clients
     if (data.length > 0) {
       const last = data[data.length - 1];
-      // Regex to parse "POINT(lng lat)"
-      const coords = last.location_wkt.match(/POINT\(([-\d.]+) ([-\d.]+)\)/);
-      const [lng, lat] = coords ? [parseFloat(coords[1]), parseFloat(coords[2])] : [0, 0];
 
       this.gateway.broadcastUpdate(dto.jobId, {
         tractorId: dto.tractorId,
         jobId: dto.jobId,
         point: {
-          lat,
-          lng,
+          lat: last.latitude,
+          lng: last.longitude,
           recordedAt: last.recordedAt,
           speedKmph: last.speedKmph,
           headingDeg: last.headingDeg,
           infectionIntensity: last.infectionIntensity,
           heatWeight: last.heatWeight,
-          progressPercent: last.progressPercent,
+          gpsFixQuality: last.gpsFixQuality,
+          sprayActive: last.sprayActive,
+          valveStates: last.valveStates,
+          diseaseLabel: last.diseaseLabel
         },
         isDemo: false
       } as LiveTelemetryPayload);
@@ -77,6 +82,14 @@ export class TelemetryService {
     // Use raw SQL for PostGIS/Unsupported type support
     let ingested = 0;
     for (const p of data) {
+      const combinedExtra = {
+        ...p.extra,
+        ...(p.gpsFixQuality !== undefined && { gpsFixQuality: p.gpsFixQuality }),
+        ...(p.sprayActive !== undefined && { sprayActive: p.sprayActive }),
+        ...(p.valveStates !== undefined && { valveStates: p.valveStates }),
+        ...(p.diseaseLabel !== undefined && { diseaseLabel: p.diseaseLabel })
+      };
+
       try {
         await this.prisma.$executeRaw`
           INSERT INTO telemetry_points (
@@ -85,9 +98,9 @@ export class TelemetryService {
             heat_weight, progress_percent, extra
           ) VALUES (
             ${p.tractorId}, ${p.jobId}, ${p.recordedAt}, 
-            ST_GeomFromText(${p.location_wkt || 'POINT(0 0)'}, 4326), 
+            ST_GeomFromText(${p.location_wkt}, 4326), 
             ${p.speedKmph}, ${p.headingDeg}, ${p.infectionIntensity}, 
-            ${p.heatWeight}, ${p.progressPercent}, ${p.extra ? JSON.parse(p.extra) : null}
+            ${p.heatWeight}, NULL, ${Object.keys(combinedExtra).length > 0 ? combinedExtra : null}
           )
         `;
         ingested++;
@@ -145,7 +158,7 @@ export class TelemetryService {
         return;
       }
 
-      const payload: LiveTelemetryPayload = {
+      const payload = {
         tractorId,
         jobId,
         point: {
@@ -156,10 +169,11 @@ export class TelemetryService {
           headingDeg: movingEast ? 90 : 270,
           infectionIntensity: Math.random() * 0.4,
           heatWeight: 15,
-          progressPercent: progress,
+          gpsFixQuality: 4,     // DGPS simulated
+          sprayActive: true,    // Active spray simulated
         },
         isDemo: true
-      };
+      } as unknown as LiveTelemetryPayload;
 
       this.gateway.broadcastUpdate(jobId, payload);
     }, 500);
