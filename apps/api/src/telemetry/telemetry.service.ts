@@ -34,62 +34,86 @@ export class TelemetryService {
       throw new BadRequestException(`Cannot ingest telemetry for a ${job.status} job`);
     }
 
-    // Stop simulator if real data arrives for this job
     this.stopSimulator(dto.jobId);
 
-    const data = dto.points.map(p => ({
-      tractorId: dto.tractorId,
-      jobId: dto.jobId,
-      recordedAt: new Date(p.recordedAt),
-      location_wkt: `POINT(${p.longitude} ${p.latitude})`,
-      latitude: p.latitude,
-      longitude: p.longitude,
-      speedKmph: p.speedKmph,
-      headingDeg: p.headingDeg,
-      infectionIntensity: p.infectionIntensity,
-      heatWeight: p.heatWeight,
-      gpsFixQuality: p.gpsFixQuality,
-      sprayActive: p.sprayActive,
-      valveStates: p.valveStates,
-      diseaseLabel: p.diseaseLabel,
-      extra: p.extra || {}
-    }));
+    const insertions: any[] = [];
 
-    // Broadcast the latest point to live clients
-    if (data.length > 0) {
-      const last = data[data.length - 1];
+    if (dto.points && dto.points.length > 0) {
+      dto.points.forEach(p => insertions.push({
+        tractorId: dto.tractorId,
+        jobId: dto.jobId,
+        recordedAt: new Date(p.recordedAt),
+        location_wkt: `POINT(${p.longitude} ${p.latitude})`,
+        speedKmph: p.speedKmph ?? null,
+        headingDeg: p.headingDeg ?? null,
+        infectionIntensity: p.infectionIntensity ?? null,
+        heatWeight: p.heatWeight ?? null,
+        extra: {
+          type: 'point',
+          gpsFixQuality: p.gpsFixQuality,
+          sprayActive: p.sprayActive
+        }
+      }));
+    }
+
+    if (dto.events && dto.events.length > 0) {
+      dto.events.forEach(e => insertions.push({
+        tractorId: dto.tractorId,
+        jobId: dto.jobId,
+        recordedAt: new Date(e.recordedAt),
+        location_wkt: `POINT(0 0)`,
+        speedKmph: null,
+        headingDeg: null,
+        infectionIntensity: null,
+        heatWeight: null,
+        extra: { type: 'event', ...e }
+      }));
+    }
+
+    if (dto.health && dto.health.length > 0) {
+      dto.health.forEach(h => insertions.push({
+        tractorId: dto.tractorId,
+        jobId: dto.jobId,
+        recordedAt: new Date(h.recordedAt),
+        location_wkt: `POINT(0 0)`,
+        speedKmph: null,
+        headingDeg: null,
+        infectionIntensity: null,
+        heatWeight: null,
+        extra: { type: 'health', ...h }
+      }));
+    }
+
+    // Broadcast only if we have a valid spatial point to avoid map jumping
+    if (dto.points && dto.points.length > 0) {
+      const lastPoint = dto.points[dto.points.length - 1];
+      const lastEvent = dto.events?.length ? dto.events[dto.events.length - 1] : null;
 
       this.gateway.broadcastUpdate(dto.jobId, {
         tractorId: dto.tractorId,
         jobId: dto.jobId,
         point: {
-          lat: last.latitude,
-          lng: last.longitude,
-          recordedAt: last.recordedAt,
-          speedKmph: last.speedKmph,
-          headingDeg: last.headingDeg,
-          infectionIntensity: last.infectionIntensity,
-          heatWeight: last.heatWeight,
-          gpsFixQuality: last.gpsFixQuality,
-          sprayActive: last.sprayActive,
-          valveStates: last.valveStates,
-          diseaseLabel: last.diseaseLabel
+          lat: lastPoint.latitude,
+          lng: lastPoint.longitude,
+          recordedAt: lastPoint.recordedAt,
+          speedKmph: lastPoint.speedKmph,
+          headingDeg: lastPoint.headingDeg,
+          infectionIntensity: lastPoint.infectionIntensity,
+          heatWeight: lastPoint.heatWeight,
+          gpsFixQuality: lastPoint.gpsFixQuality,
+          sprayActive: lastPoint.sprayActive,
+          valveStates: lastEvent?.valveStates,
+          diseaseLabel: lastEvent?.diseaseLabel
         },
         isDemo: false
       } as LiveTelemetryPayload);
     }
 
-    // Use raw SQL for PostGIS/Unsupported type support
     let ingested = 0;
-    for (const p of data) {
-      const combinedExtra = {
-        ...p.extra,
-        ...(p.gpsFixQuality !== undefined && { gpsFixQuality: p.gpsFixQuality }),
-        ...(p.sprayActive !== undefined && { sprayActive: p.sprayActive }),
-        ...(p.valveStates !== undefined && { valveStates: p.valveStates }),
-        ...(p.diseaseLabel !== undefined && { diseaseLabel: p.diseaseLabel })
-      };
-
+    for (const p of insertions) {
+      // Filter out undefined keys from extra so JSONB is clean
+      const cleanExtra = Object.fromEntries(Object.entries(p.extra).filter(([_, v]) => v != null));
+      
       try {
         await this.prisma.$executeRaw`
           INSERT INTO telemetry_points (
@@ -100,7 +124,7 @@ export class TelemetryService {
             ${p.tractorId}, ${p.jobId}, ${p.recordedAt}, 
             ST_GeomFromText(${p.location_wkt}, 4326), 
             ${p.speedKmph}, ${p.headingDeg}, ${p.infectionIntensity}, 
-            ${p.heatWeight}, NULL, ${Object.keys(combinedExtra).length > 0 ? combinedExtra : null}
+            ${p.heatWeight}, NULL, ${Object.keys(cleanExtra).length > 0 ? cleanExtra : null}
           )
         `;
         ingested++;
