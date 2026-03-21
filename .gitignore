@@ -98,3 +98,8 @@ apps/api/TEST_PLAN.md
 apps/api/compile_errors*
 apps/api/fix_imports.js
 apps/api/scripts/
+
+
+# === Hardware ===
+current hardware code/
+hardware/
