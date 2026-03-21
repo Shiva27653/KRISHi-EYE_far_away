@@ -15,8 +15,17 @@ export function useTelemetry(jobId: string) {
         const onDisconnect = () => setIsConnected(false);
         const onUpdate = (payload: LiveTelemetryPayload) => {
             if (payload.jobId === jobId) {
-                setLatestPoint(payload);
-                setHistory((prev) => [...prev.slice(-100), payload]);
+                setLatestPoint(prev => {
+                    const mergedPoint = {
+                        ...(prev?.point || {}),
+                        ...payload.point,
+                    };
+                    return { ...payload, point: mergedPoint } as LiveTelemetryPayload;
+                });
+                
+                if (payload.point.lat !== undefined && payload.point.lng !== undefined) {
+                    setHistory((prev) => [...prev.slice(-100), payload]);
+                }
             }
         };
 

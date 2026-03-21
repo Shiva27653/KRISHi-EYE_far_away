@@ -29,17 +29,21 @@ export const LiveMap: React.FC<LiveMapProps> = ({ jobId, tractorId, isLive }) =>
 
     // Convert history to point array for RouteTrail
     const trailPoints = useMemo(() => 
-        history.map(h => ({ lat: h.point.lat, lng: h.point.lng })), 
+        history
+            .filter(h => h.point.lat !== undefined && h.point.lng !== undefined)
+            .map(h => ({ lat: h.point.lat!, lng: h.point.lng! })), 
     [history]);
 
     // Format history for FarmHeatmap
     const heatmapData = useMemo(() => 
-        history.filter(h => h.point.heatWeight !== undefined && h.point.infectionIntensity !== undefined).map(h => ({
-            lat: h.point.lat,
-            lng: h.point.lng,
-            weight: h.point.heatWeight!,
-            intensity: h.point.infectionIntensity!
-        })),
+        history
+            .filter(h => h.point.lat !== undefined && h.point.lng !== undefined && h.point.heatWeight !== undefined && h.point.infectionIntensity !== undefined)
+            .map(h => ({
+                lat: h.point.lat!,
+                lng: h.point.lng!,
+                weight: h.point.heatWeight!,
+                intensity: h.point.infectionIntensity!
+            })),
     [history]);
 
     if (!currentPoint && isLive) {
@@ -62,7 +66,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({ jobId, tractorId, isLive }) =>
             <RouteTrail points={trailPoints} progressIndex={trailPoints.length - 1} />
             
             {/* Live Tractor Marker */}
-            {currentPoint && (
+            {currentPoint && currentPoint.lat !== undefined && currentPoint.lng !== undefined && (
                 <TractorMarker
                     lat={currentPoint.lat}
                     lng={currentPoint.lng}
@@ -119,8 +123,8 @@ export const LiveMap: React.FC<LiveMapProps> = ({ jobId, tractorId, isLive }) =>
                         <Activity className="w-3.5 h-3.5" /> RAW EDGE CONTEXT
                     </h3>
                     <div className="space-y-1">
-                        <div className="flex justify-between"><span>LAT:</span> <span className="text-white">{currentPoint.lat.toFixed(6)}</span></div>
-                        <div className="flex justify-between"><span>LNG:</span> <span className="text-white">{currentPoint.lng.toFixed(6)}</span></div>
+                        {currentPoint.lat !== undefined && <div className="flex justify-between"><span>LAT:</span> <span className="text-white">{currentPoint.lat.toFixed(6)}</span></div>}
+                        {currentPoint.lng !== undefined && <div className="flex justify-between"><span>LNG:</span> <span className="text-white">{currentPoint.lng.toFixed(6)}</span></div>}
                         <div className="flex justify-between"><span>SPEED:</span> <span className="text-white">{currentPoint.speedKmph || 0} km/h</span></div>
                         <div className="flex justify-between"><span>HEADING:</span> <span className="text-white">{currentPoint.headingDeg || 0}°</span></div>
                         {currentPoint.diseaseLabel && <div className="flex justify-between"><span>CV TARGET:</span> <span className="text-rose-400 font-bold">{currentPoint.diseaseLabel}</span></div>}

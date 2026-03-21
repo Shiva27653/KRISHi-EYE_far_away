@@ -12,8 +12,8 @@ export interface LiveTelemetryPayload {
   tractorId: string;
   jobId: string;
   point: {
-    lat: number;
-    lng: number;
+    lat?: number;
+    lng?: number;
     recordedAt: Date | string;
     speedKmph?: number;
     headingDeg?: number;

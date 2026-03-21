@@ -37,58 +37,59 @@ export class TelemetryService {
     this.stopSimulator(dto.jobId);
 
     const insertions: any[] = [];
+    const batchEvents = dto.events?.length ? dto.events : undefined;
+    const batchHealth = dto.health?.length ? dto.health : undefined;
+
+    let ingested = 0;
 
     if (dto.points && dto.points.length > 0) {
-      dto.points.forEach(p => insertions.push({
-        tractorId: dto.tractorId,
-        jobId: dto.jobId,
-        recordedAt: new Date(p.recordedAt),
-        location_wkt: `POINT(${p.longitude} ${p.latitude})`,
-        speedKmph: p.speedKmph ?? null,
-        headingDeg: p.headingDeg ?? null,
-        infectionIntensity: p.infectionIntensity ?? null,
-        heatWeight: p.heatWeight ?? null,
-        extra: {
-          type: 'point',
-          gpsFixQuality: p.gpsFixQuality,
-          sprayActive: p.sprayActive
+      const points = dto.points;
+      points.forEach((p, idx) => {
+        const isLastPoint = idx === points.length - 1;
+        insertions.push({
+          tractorId: dto.tractorId,
+          jobId: dto.jobId,
+          recordedAt: new Date(p.recordedAt),
+          location_wkt: `POINT(${p.longitude} ${p.latitude})`,
+          speedKmph: p.speedKmph ?? null,
+          headingDeg: p.headingDeg ?? null,
+          infectionIntensity: p.infectionIntensity ?? null,
+          heatWeight: p.heatWeight ?? null,
+          extra: {
+            type: 'point',
+            gpsFixQuality: p.gpsFixQuality,
+            sprayActive: p.sprayActive,
+            ...(isLastPoint && batchEvents ? { batchEvents } : {}),
+            ...(isLastPoint && batchHealth ? { batchHealth } : {})
+          }
+        });
+      });
+
+      // Insert spatial points with bundled extra JSON
+      for (const p of insertions) {
+        const cleanExtra = Object.fromEntries(Object.entries(p.extra).filter(([_, v]) => v != null));
+        try {
+          await this.prisma.$executeRaw`
+            INSERT INTO telemetry_points (
+              tractor_id, job_id, recorded_at, location, 
+              speed_kmph, heading_deg, infection_intensity, 
+              heat_weight, progress_percent, extra
+            ) VALUES (
+              ${p.tractorId}, ${p.jobId}, ${p.recordedAt}, 
+              ST_GeomFromText(${p.location_wkt}, 4326), 
+              ${p.speedKmph}, ${p.headingDeg}, ${p.infectionIntensity}, 
+              ${p.heatWeight}, NULL, ${Object.keys(cleanExtra).length > 0 ? cleanExtra : null}
+            )
+          `;
+          ingested++;
+        } catch (e) {
+          this.logger.error(`Failed to ingest point: ${e.message}`);
         }
-      }));
-    }
-
-    if (dto.events && dto.events.length > 0) {
-      dto.events.forEach(e => insertions.push({
-        tractorId: dto.tractorId,
-        jobId: dto.jobId,
-        recordedAt: new Date(e.recordedAt),
-        location_wkt: `POINT(0 0)`,
-        speedKmph: null,
-        headingDeg: null,
-        infectionIntensity: null,
-        heatWeight: null,
-        extra: { type: 'event', ...e }
-      }));
-    }
-
-    if (dto.health && dto.health.length > 0) {
-      dto.health.forEach(h => insertions.push({
-        tractorId: dto.tractorId,
-        jobId: dto.jobId,
-        recordedAt: new Date(h.recordedAt),
-        location_wkt: `POINT(0 0)`,
-        speedKmph: null,
-        headingDeg: null,
-        infectionIntensity: null,
-        heatWeight: null,
-        extra: { type: 'health', ...h }
-      }));
-    }
-
-    // Broadcast only if we have a valid spatial point to avoid map jumping
-    if (dto.points && dto.points.length > 0) {
+      }
+      
       const lastPoint = dto.points[dto.points.length - 1];
-      const lastEvent = dto.events?.length ? dto.events[dto.events.length - 1] : null;
-
+      const lastEvent = batchEvents ? batchEvents[batchEvents.length - 1] : null;
+      
       this.gateway.broadcastUpdate(dto.jobId, {
         tractorId: dto.tractorId,
         jobId: dto.jobId,
@@ -107,29 +108,44 @@ export class TelemetryService {
         },
         isDemo: false
       } as LiveTelemetryPayload);
-    }
 
-    let ingested = 0;
-    for (const p of insertions) {
-      // Filter out undefined keys from extra so JSONB is clean
-      const cleanExtra = Object.fromEntries(Object.entries(p.extra).filter(([_, v]) => v != null));
-      
-      try {
-        await this.prisma.$executeRaw`
-          INSERT INTO telemetry_points (
-            tractor_id, job_id, recorded_at, location, 
-            speed_kmph, heading_deg, infection_intensity, 
-            heat_weight, progress_percent, extra
-          ) VALUES (
-            ${p.tractorId}, ${p.jobId}, ${p.recordedAt}, 
-            ST_GeomFromText(${p.location_wkt}, 4326), 
-            ${p.speedKmph}, ${p.headingDeg}, ${p.infectionIntensity}, 
-            ${p.heatWeight}, NULL, ${Object.keys(cleanExtra).length > 0 ? cleanExtra : null}
-          )
-        `;
+    } else if (batchEvents || batchHealth) {
+      // Option B Safe Embedding: Attach to last known geospatial anchor if batch lacks points
+      const lastKnown = await this.prisma.telemetryPoint.findFirst({
+        where: { jobId: dto.jobId },
+        orderBy: { recordedAt: 'desc' },
+        select: { id: true, extra: true }
+      });
+
+      if (lastKnown) {
+        const currentExtra: any = typeof lastKnown.extra === 'string' 
+           ? JSON.parse(lastKnown.extra) 
+           : (lastKnown.extra || {});
+        
+        const updatedExtra = {
+          ...currentExtra,
+          ...(batchEvents ? { lateEvents: [...(currentExtra.lateEvents || []), ...batchEvents] } : {}),
+          ...(batchHealth ? { lateHealth: [...(currentExtra.lateHealth || []), ...batchHealth] } : {})
+        };
+        
+        await this.prisma.telemetryPoint.update({
+          where: { id: lastKnown.id },
+          data: { extra: updatedExtra }
+        });
         ingested++;
-      } catch (e) {
-        this.logger.error(`Failed to ingest point: ${e.message}`);
+        
+        // Broadcast the async event update without teleporting the map UI
+        const lastEvent = batchEvents ? batchEvents[batchEvents.length - 1] : null;
+        if (lastEvent) {
+            this.gateway.broadcastUpdate(dto.jobId, {
+              tractorId: dto.tractorId,
+              jobId: dto.jobId,
+              point: {
+                  ...lastEvent // Merge any non-spatial telemetry updates loosely
+              },
+              isDemo: false
+            } as LiveTelemetryPayload);
+        }
       }
     }
 
