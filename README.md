@@ -18,8 +18,6 @@
 > [!NOTE]
 > The primary `.app` custom domain is currently undergoing DNS migration. Please use the verified Vercel/Render links above for immediate evaluation.
 
-![Hero Screenshot](https://raw.githubusercontent.com/soham25-git/KRISHI-EYE_Webapp-India-Innovates_Open-Innovation/main/docs/screenshots/dashboard_hero.png)
-
 ---
 
 ## 🏗️ System Architecture
