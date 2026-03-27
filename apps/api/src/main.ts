@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { NestFactory, HttpAdapterHost, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { VersioningType } from '@nestjs/common';
 import helmet from 'helmet';
 import { ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
@@ -9,6 +10,10 @@ import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.enableVersioning({
+    type: VersioningType.URI,
+  });
 
   // Security Headers (CSP, HSTS)
   app.use(helmet());

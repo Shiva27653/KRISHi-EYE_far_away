@@ -101,5 +101,16 @@ apps/api/scripts/
 
 
 # === Hardware ===
-current hardware code/
-hardware/
+# Ignore large binary assets
+krishi-eye/models/
+krishi-eye/calib/
+*.hef
+*.npz
+
+# Allow the source code
+!krishi-eye/
+!krishi-eye/hardware/
+!krishi-eye/hardware/**/*.py
+!krishi-eye/preflight.sh
+!krishi-eye/README.md
+!krishi-eye/.env.example
