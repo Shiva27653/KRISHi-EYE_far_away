@@ -7,8 +7,8 @@ export async function apiRequest<T>(
     endpoint: string,
     options: RequestInit = {}
 ): Promise<T> {
-    // Strip /v1 prefix since backend routes have no version prefix
-    const normalizedEndpoint = endpoint.startsWith('/v1/') ? endpoint.slice(3) : endpoint;
+    // Versioning is now enabled on the backend; keep the prefix if provided
+    const normalizedEndpoint = endpoint;
 
     const headers = new Headers(options.headers);
     if (!(options.body instanceof FormData)) {

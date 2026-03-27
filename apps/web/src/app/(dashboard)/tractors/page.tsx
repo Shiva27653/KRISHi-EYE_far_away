@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { apiRequest } from '@/lib/api-client'
-import { Plus, Tractor as TractorIcon, Info } from 'lucide-react'
+import { Plus, Tractor as TractorIcon, Info, Copy, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -19,6 +19,13 @@ export default function TractorsPage() {
     const [tractors, setTractors] = useState<Tractor[]>([])
     const [loading, setLoading] = useState(true)
     const [showRegisterModal, setShowRegisterModal] = useState(false)
+    const [copiedId, setCopiedId] = useState<string | null>(null)
+
+    const copyToClipboard = (id: string) => {
+        navigator.clipboard.writeText(id)
+        setCopiedId(id)
+        setTimeout(() => setCopiedId(null), 2000)
+    }
 
     const fetchTractors = async () => {
         setLoading(true)
@@ -73,7 +80,18 @@ export default function TractorsPage() {
                         <Card key={tractor.id} className="border-[#2A2D35] bg-[#181A20] text-white overflow-hidden">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-xl font-bold">{tractor.label}</CardTitle>
-                                <div className={`h-2 w-2 rounded-full ${tractor.status === 'active' ? 'bg-[#10B981]' : 'bg-[#EF4444]'}`} />
+                                <div className="flex items-center gap-2">
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-8 w-8 text-slate-400 hover:text-emerald-400"
+                                        onClick={() => copyToClipboard(tractor.id)}
+                                        title="Copy Tractor ID for RPi .env"
+                                    >
+                                        {copiedId === tractor.id ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                    </Button>
+                                    <div className={`h-2 w-2 rounded-full ${tractor.status === 'active' ? 'bg-[#10B981]' : 'bg-[#EF4444]'}`} />
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-xs text-[#6B7280] mb-4">Model: {tractor.description}</div>

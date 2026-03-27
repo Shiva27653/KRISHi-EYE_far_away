@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { apiRequest } from '@/lib/api-client'
-import { Plus, ClipboardList, CheckCircle2, Clock, XCircle, Play } from 'lucide-react'
+import { Plus, ClipboardList, CheckCircle2, Clock, XCircle, Play, Copy, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 
@@ -29,6 +29,13 @@ export default function JobsPage() {
     const [jobs, setJobs] = useState<Job[]>([])
     const [loading, setLoading] = useState(true)
     const [showNewJobModal, setShowNewJobModal] = useState(false)
+    const [copiedId, setCopiedId] = useState<string | null>(null)
+
+    const copyToClipboard = (id: string) => {
+        navigator.clipboard.writeText(id)
+        setCopiedId(id)
+        setTimeout(() => setCopiedId(null), 2000)
+    }
 
     const fetchJobs = async () => {
         setLoading(true)
@@ -96,7 +103,18 @@ export default function JobsPage() {
                                         <ClipboardList className="h-5 w-5 text-[#A0AAB5]" />
                                     </div>
                                     <div>
-                                        <div className="font-bold capitalize">{job.type.replace('_', ' ')}</div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="font-bold capitalize">{job.type.replace('_', ' ')}</div>
+                                            <Button 
+                                                variant="ghost" 
+                                                size="icon" 
+                                                className="h-6 w-6 text-slate-400 hover:text-emerald-400"
+                                                onClick={() => copyToClipboard(job.id)}
+                                                title="Copy Job ID for RPi .env"
+                                            >
+                                                {copiedId === job.id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                                            </Button>
+                                        </div>
                                         <div className="text-sm text-[#A0AAB5]">
                                             {job.tractor.name} • {job.field.name}
                                         </div>
