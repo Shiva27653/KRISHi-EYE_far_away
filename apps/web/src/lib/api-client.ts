@@ -7,8 +7,9 @@ export async function apiRequest<T>(
     endpoint: string,
     options: RequestInit = {}
 ): Promise<T> {
-    // Versioning is now enabled on the backend; keep the prefix if provided
-    const normalizedEndpoint = endpoint;
+    // URI Versioning is enabled on the backend; prepend /v1 if missing
+    const absoluteEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const normalizedEndpoint = absoluteEndpoint.startsWith('/v1/') ? absoluteEndpoint : `/v1${absoluteEndpoint}`;
 
     const headers = new Headers(options.headers);
     if (!(options.body instanceof FormData)) {
