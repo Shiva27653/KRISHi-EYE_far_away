@@ -12,7 +12,7 @@
 ## 🚀 Live Demo & Dashboard
 
 > [!TIP]
-> **Live Web Dashboard:** [krishi-eye.vercel.app](https://krishi-eye-webapp-india-innovates-o.vercel.app/)
+> **Live Web Dashboard:** [krishi-eye.vercel.app](https://krishi-eye-webapp.vercel.app/)
 > **API Docs:** [krishi-eye-api.onrender.com/api/docs](https://krishi-eye-api.onrender.com/api/docs)
 
 > [!NOTE]
